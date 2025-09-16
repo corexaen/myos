@@ -85,7 +85,7 @@ unsigned char font8x8_basic[128][8] = {
     { 0x00, 0x00, 0x00, 0x3F, 0x00, 0x00, 0x00, 0x00},   // U+002D (-)
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C, 0x00},   // U+002E (.)
     { 0x60, 0x30, 0x18, 0x0C, 0x06, 0x03, 0x01, 0x00},   // U+002F (/)
-    { 0x3E, 0x63, 0x73, 0x7B, 0x6F, 0x67, 0x3E, 0x00},   // U+0030 (0)
+    { 0x3E, 0x63, 0x63, 0x63, 0x63, 0x63, 0x3E, 0x00},   // U+0030 (0)
     { 0x0C, 0x0E, 0x0C, 0x0C, 0x0C, 0x0C, 0x3F, 0x00},   // U+0031 (1)
     { 0x1E, 0x33, 0x30, 0x1C, 0x06, 0x33, 0x3F, 0x00},   // U+0032 (2)
     { 0x1E, 0x33, 0x30, 0x1C, 0x30, 0x33, 0x1E, 0x00},   // U+0033 (3)
@@ -578,7 +578,7 @@ static inline void lapic_eoi() {
     *(volatile uint32_t*)(lapic_base + LAPIC_EOI_REGISTER) = 0;
 }
 
-uint8_t* console = (uint8_t*)0x400000;
+uint8_t console[100 * 40] = { 0, };
 static const char hex_digits[] = "0123456789ABCDEF";
 
 static inline void bytes_to_hex_string(const char* src, int len, char* dst) {
@@ -705,7 +705,7 @@ __attribute__((interrupt)) void none_handler(interrupt_frame_t* frame) {
 __attribute__((interrupt)) void page_fault_handler(interrupt_frame_t* frame, uint64_t error_code) {
     uint64_t cr2;
     asm volatile ("mov %0, cr2" : "=r"(cr2));
-    char raw_stack[8];
+    char raw_stack[16];
     __builtin_memcpy(raw_stack, (void*)&frame->cs, 8);
 	__builtin_memcpy(raw_stack + 8, (void*)&error_code, 8);
     bytes_to_hex_string(raw_stack, sizeof(raw_stack), (char*)console);
@@ -783,9 +783,11 @@ void init_interrupts() {
     set_idt_gate(33, (uint64_t)keyboard_handler, 0x08, 0x8E);
     set_idt_gate(0x2C, (uint64_t)dummy_mouse_handler, 0x08, 0x8E);
     load_idt();
-	asm volatile ("sti");
+	//asm volatile ("sti");
 }
 extern "C" uint64_t _rsp = 0xFF;
+int x, y, i;
+char raw_stack[24];
 extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
 	//__asm__ __volatile__("hlt");
 	
@@ -830,35 +832,33 @@ extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
         "push rax\n\t"
         "push %[entry]\n\t"
         
-        "iretq\n\t"
+        //"iretq\n\t"
+		"mov %[out], rsp\n\t"
         /*
         "call .tetestst\n\t"
         ".tetestst:\n\t"
         "pop rax\n\t"
         "mov %[out], rax\n\t"
+        */
+		//"sub rsp, 8\n\t"
         //"mov rsp, rdi\n\t"
         //"pop rdi\n\t"
-        */
+        
         :
     [out] "=m"(_rsp)              // 전역 변수 memory output
         : [in] "m"(current),
-        [entry] "r"(current->rip)
+        [entry] "r"(task1_func)
         : "rax", "memory"
         );
-        
-    char raw_stack[32];
-    __builtin_memcpy(raw_stack, (void*)current, 32);
-    bytes_to_hex_string(raw_stack, 32, (char*)console);
-    int x, y, i;
+    __builtin_memcpy(raw_stack, (void*)&_rsp, 8);
+    bytes_to_hex_string(raw_stack, 8, (char*)console);
+    __builtin_memcpy(raw_stack, (void*)_rsp, 24);
+	bytes_to_hex_string(raw_stack, 24, (char*)console + 100);
     //BootInfo* gGraphicsInfo = (BootInfo*)0xFFFFFFFF00200000ull;
     //console[3] = 'B';
+    //__asm__ __volatile__("hlt");
     for (i = 0; i < gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight; i++) {
-        uint8_t Red = 255;
-        uint8_t Green = 255;
-        uint8_t Blue = 255;
-
-        uint32_t PixelColor = (Red << 16) | (Green << 8) | Blue;
-        *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i) = PixelColor;
+        *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i) = 0xFFFFFF;
     }
     while (1) {
         for (y = 0; y < 40; y++) {
@@ -866,5 +866,6 @@ extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
                 putc(gGraphicsInfo, x * 1 * 8 + 4, y * 2 * 16 + 4, console[y * 100 + x], 0, 1);
             }
         }
+		__asm__ __volatile__("iretq");
     }
 }
