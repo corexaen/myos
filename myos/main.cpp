@@ -499,7 +499,7 @@ void init_apic() {
     disable_pic();               // 1. PIC 끄고
     init_lapic_base();
     enable_apic();               // 2. Local APIC 켜고
-    //setup_lapic_timer(32);
+    setup_lapic_timer(32);
     ioapic_set_redirection(1, 0x21, 0);
     ioapic_set_redirection(12, 0x2C, 0);
 }
@@ -522,12 +522,18 @@ static inline void* simple_memset(void* dest, int value, unsigned long size) {
 	return dest;
 }
 BootInfo* gGraphicsInfo = (BootInfo*)0xFFFFFFFF00200000ull;
-char a = 0;
 int i1 = 0;
 int i2 = 0;
 //task test
-extern "C" __attribute__((force_align_arg_pointer, noreturn, noinline)) void task1_func() {
-    __asm__ __volatile__("hlt");
+extern "C" NAKED void simple_hlt() {
+    __asm__ __volatile__(
+        "hlt\n\t"
+		"jmp simple_hlt\n\t"
+    );
+}
+char a = 0;
+extern "C" __attribute__((noreturn, noinline, optimize("omit-frame-pointer"))) void task1_func() {
+	//__asm__ __volatile__("hlt");
     while (1) {
         for (i1 = 0; i1 < gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight / 2; i1++) {
             *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i1) = (a << 16) | (0 << 8) | 0;
@@ -535,7 +541,7 @@ extern "C" __attribute__((force_align_arg_pointer, noreturn, noinline)) void tas
         a = (a + 1) % 256;
     }
 }
-extern "C" __attribute__((force_align_arg_pointer, noreturn, noinline)) void task2_func() {
+extern "C" __attribute__((noreturn, noinline, optimize("omit-frame-pointer"))) void task2_func() {
     while (1) {
         for (i2 = gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight / 2; i2 < gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight; i2++) {
             *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i2) = (0 << 16) | (a << 8) | 0;
@@ -554,12 +560,12 @@ void init_tasks() {
 	uint64_t* task1_rsp = (uint64_t*)phy_page_allocator->alloc_phy_page();
 	virt_page_allocator->alloc_virt_page((uint64_t)task1_rsp, (uint64_t)task1_rsp, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::G);
     task1_rsp = (uint64_t*)((uint64_t)task1_rsp + PageSize);
-    /*
-    *(--task1_rsp) = 0; //16정렬용
+    
+    //*(--task1_rsp) = 0; //16정렬용
 	*(--task1_rsp) = 0x202; // rflags
 	*(--task1_rsp) = 0x08;  // cs
 	*(--task1_rsp) = (uint64_t)task1_func; // rip
-    */
+    
 	uint64_t* task2_rsp = (uint64_t*)phy_page_allocator->alloc_phy_page();
 	virt_page_allocator->alloc_virt_page((uint64_t)task2_rsp, (uint64_t)task2_rsp, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::G);
 	task2_rsp = (uint64_t*)((uint64_t)task2_rsp + PageSize);
@@ -793,35 +799,14 @@ extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
 	
     //__asm__ __volatile__("hlt");
     init_interrupts();
-    //int* a = (int*)0xFF400000;
-    //*a = 1;
-	//__asm__ __volatile__("hlt");
-    //*(char*)(HHDM_BASE + 0x500000ull) = 'A';
-    /*
-    uint64_t* sp = (uint64_t*)(get_rsp() - 240);
-	sp = (uint64_t*)((uint64_t)sp & ~0xFLLU);  // 16바이트 정렬
-    --sp;
-    // 1. 유저모드 프로세스 시작용 가짜 트랩프레임 PUSH
-    //*(--sp) = user_ss;         // ss   (유저→커널만 필요, Ring3 실행용)
-    //*(--sp) = user_stack;      // rsp  (유저모드 스택포인터)
-    *(--sp) = 0x202;           // rflags (IF set 등, 필요에 따라 조정)
-    *(--sp) = 0x08;         // cs   (유저모드 코드세그먼트)
-    *(--sp) = (uint64_t)next->rip;  // rip (시작 함수 주소)
-
-    // 2. 일반 레지스터 15개(rax~r15) PUSH (0 또는 원하는 초기값)
-    for (int i = 0; i < 15; ++i) {
-        *(--sp) = 0;
-    }
-    
-    next = (context_t*)sp;
-    */
     
     __asm__ __volatile__(
         
         //"push rdi\n\t"
         //"mov rdi, rsp\n\t"
         //"mov rsp, 0x600000\n\t"
-        //"mov rsp, %[in]\n\t"
+        "mov rsp, %[in]\n\t"
+        /*
         "and rsp, -16\n\t"
         "sub rsp, 8\n\t"
         "pushfq\n\t"
@@ -831,8 +816,8 @@ extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
         "mov rax, 0x08\n\t"
         "push rax\n\t"
         "push %[entry]\n\t"
-        
-        //"iretq\n\t"
+        */
+        "iretq\n\t"
 		"mov %[out], rsp\n\t"
         /*
         "call .tetestst\n\t"
