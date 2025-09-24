@@ -397,7 +397,7 @@ void set_idt_gate(int n, uint64_t handler, uint16_t selector, uint8_t flags) {
     idt[n].type_attr = flags;
 	idt[n].reserved = 0;
 }
-void load_idt(idt_ptr* _idt_ptr) {
+void _load_idt(idt_ptr* _idt_ptr) {
     __asm__ __volatile__(
         "lidt [%0];"
         : : "r"(_idt_ptr) : "memory"
@@ -406,7 +406,7 @@ void load_idt(idt_ptr* _idt_ptr) {
 void load_idt() {
     idt_reg.limit = (sizeof(struct idt_entry) * IDT_SIZE) - 1;
     idt_reg.base = (uint64_t)&idt;
-    load_idt(&idt_reg);
+    _load_idt(&idt_reg);
 }
 static inline uint64_t rdmsr(uint32_t msr) {
     uint32_t low, high;
@@ -531,22 +531,26 @@ extern "C" NAKED void simple_hlt() {
 		"jmp simple_hlt\n\t"
     );
 }
-char a = 0;
-extern "C" __attribute__((noreturn, noinline, optimize("omit-frame-pointer"))) void task1_func() {
-	//__asm__ __volatile__("hlt");
+extern "C" __attribute__((noreturn, noinline)) void task1_func() {
+    int a = 0;
+    int b;
     while (1) {
         for (i1 = 0; i1 < gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight / 2; i1++) {
-            *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i1) = (a << 16) | (0 << 8) | 0;
+            *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i1) = a << 16;
         }
-        a = (a + 1) % 256;
+        a = (a + 1) % 0x100;
+        b++;
     }
 }
-extern "C" __attribute__((noreturn, noinline, optimize("omit-frame-pointer"))) void task2_func() {
+extern "C" __attribute__((noreturn, noinline)) void task2_func() {
+    int a = 0;
+    int c;
     while (1) {
         for (i2 = gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight / 2; i2 < gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight; i2++) {
-            *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i2) = (0 << 16) | (a << 8) | 0;
+            *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i2) = a;
         }
-        a = (a + 1) % 256;
+        a = (a + 1) % 0x100;
+        c++;
     }
 }
 typedef struct __context_t {
@@ -561,22 +565,27 @@ void init_tasks() {
 	virt_page_allocator->alloc_virt_page((uint64_t)task1_rsp, (uint64_t)task1_rsp, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::G);
     task1_rsp = (uint64_t*)((uint64_t)task1_rsp + PageSize);
     
-    //*(--task1_rsp) = 0; //16정렬용
+    *(--task1_rsp) = 0; //16정렬용
+    *(--task1_rsp) = 0x10; //ss
+    *(--task1_rsp) = 0;
 	*(--task1_rsp) = 0x202; // rflags
 	*(--task1_rsp) = 0x08;  // cs
 	*(--task1_rsp) = (uint64_t)task1_func; // rip
-    
+    task1_rsp[3] = (uint64_t)task1_rsp;
 	uint64_t* task2_rsp = (uint64_t*)phy_page_allocator->alloc_phy_page();
 	virt_page_allocator->alloc_virt_page((uint64_t)task2_rsp, (uint64_t)task2_rsp, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::G);
 	task2_rsp = (uint64_t*)((uint64_t)task2_rsp + PageSize);
 	*(--task2_rsp) = 0; //16정렬용
+	*(--task2_rsp) = 0x10;
+	*(--task2_rsp) = 0;
 	*(--task2_rsp) = 0x202; // rflags
 	*(--task2_rsp) = 0x08;  // cs
 	*(--task2_rsp) = (uint64_t)task2_func; // rip
-    for(int i=0;i<15;i++) {
+    
+    for(int i=0;i<15 ;i++) {
         *(--task2_rsp) = 0;
 	}
-
+	task2_rsp[18] = (uint64_t)(task2_rsp + 15); // rsp
     current = (context_t*)task1_rsp;
     next = (context_t*)task2_rsp;
 }
@@ -584,6 +593,34 @@ static inline void lapic_eoi() {
     *(volatile uint32_t*)(lapic_base + LAPIC_EOI_REGISTER) = 0;
 }
 
+#define COM1 0x3F8
+void uart_init() {
+    /*
+    outb(COM1 + 1, 0x00);    // Disable interrupts
+    outb(COM1 + 3, 0x80);    // Enable DLAB
+    outb(COM1 + 0, 0x03);    // Baud divisor (38400 baud)
+    outb(COM1 + 1, 0x00);
+    outb(COM1 + 3, 0x03);    // 8 bits, no parity, one stop
+    outb(COM1 + 2, 0xC7);    // Enable FIFO
+    outb(COM1 + 4, 0x0B);    // IRQs enabled, RTS/DSR set
+    */
+}
+
+int uart_is_transmit_empty() {
+    //return inb(COM1 + 5) & 0x20;
+}
+
+void uart_putc(char c) {
+    //while (!uart_is_transmit_empty());
+    //outb(COM1, c);
+}
+
+void uart_print(const char* s) {
+    //while (*s) {
+    //    if (*s == '\n') uart_putc('\r');
+    //    uart_putc(*s++);
+    //}
+}
 uint8_t console[100 * 40] = { 0, };
 static const char hex_digits[] = "0123456789ABCDEF";
 
@@ -605,7 +642,7 @@ typedef struct interrupt_frame {
 } __attribute__((packed)) interrupt_frame_t;
 __attribute__((interrupt)) void keyboard_handler(interrupt_frame_t* frame) {
     uint8_t scancode = inb(0x60);
-    /*
+    
     BootInfo* gGraphicsInfo = (BootInfo*)0xFFFFFFFF00200000ull;
     for (int i = 0; i < gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight; i++) {
         uint8_t Red = 0;
@@ -615,7 +652,7 @@ __attribute__((interrupt)) void keyboard_handler(interrupt_frame_t* frame) {
         uint32_t PixelColor = (Red << 16) | (Green << 8) | Blue;
         *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i) = PixelColor;
     }
-    */
+    
     /*
     if (console[0] == 0) {
         char raw_frame[24];
@@ -630,7 +667,7 @@ __attribute__((interrupt)) void dummy_mouse_handler(interrupt_frame_t* frame) {
     BootInfo* gGraphicsInfo = (BootInfo*)0xFFFFFFFF00200000ull;
     for (int i = 0; i < gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight; i++) {
         uint8_t Red = 255;
-        uint8_t Green = simple_rand() % 256;
+        uint8_t Green = 255;
         uint8_t Blue = 0;
 
         uint32_t PixelColor = (Red << 16) | (Green << 8) | Blue;
@@ -646,10 +683,18 @@ static inline uint64_t get_rsp() {
 static inline void set_rsp(uint64_t v) {
     asm volatile ("mov rsp, %0" : : "r"(v));
 }
-extern "C" uint64_t* c_timer_handler(context_t* frame) {
+char uart_buf[1000];
+extern "C" __attribute__((noinline)) uint64_t* c_timer_handler(context_t* frame) {
     current = next;
     next = frame;
+    uart_print("timer\n");
+	simple_memset(uart_buf, 0, sizeof(uart_buf));
+	bytes_to_hex_string((char*)current, 8 * 20, uart_buf);
+	uart_print(uart_buf);
+
     lapic_write(0xB0, 0);  // EOI
+    uint64_t* ret = (uint64_t*)current;
+    asm volatile("" : "+a"(ret));
     return (uint64_t*)current;
 }
 __attribute__((naked)) void timer_handler() {
@@ -704,6 +749,9 @@ __attribute__((naked)) void timer_handler() {
         "iretq\n\t"
         );
 }
+__attribute__((interrupt)) void test_timer_handler(interrupt_frame_t* frame) {
+    lapic_eoi();
+}
 __attribute__((interrupt)) void none_handler(interrupt_frame_t* frame) {
     __asm__ __volatile__("hlt");
     lapic_eoi();
@@ -733,9 +781,6 @@ __attribute__((interrupt)) void page_fault_handler(interrupt_frame_t* frame, uin
     __asm__ __volatile__("hlt");
 }
 __attribute__((interrupt)) void general_protection_fault_handler(interrupt_frame_t* frame, uint64_t error_code) {
-    char raw_stack[8];
-    __builtin_memcpy(raw_stack, (void*)&error_code, 8);
-    bytes_to_hex_string(raw_stack, sizeof(raw_stack), (char*)console);
     for (int i = 0; i < gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight; i++) {
         uint8_t Red = 255;
         uint8_t Green = 255;
@@ -743,6 +788,11 @@ __attribute__((interrupt)) void general_protection_fault_handler(interrupt_frame
         uint32_t PixelColor = (Red << 16) | (Green << 8) | Blue;
         *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i) = PixelColor;
     }
+    char raw_stack[8];
+    __builtin_memcpy(raw_stack, (void*)&error_code, 8);
+    bytes_to_hex_string(raw_stack, sizeof(raw_stack), (char*)console);
+    console[3 * 9] = 'G';
+	console[3 * 9 + 1] = 'F';
     while (1) {
         for (int y = 0; y < 40; y++) {
             for (int x = 0; x < 100; x++) {
@@ -752,10 +802,12 @@ __attribute__((interrupt)) void general_protection_fault_handler(interrupt_frame
     }
     __asm__ __volatile__("hlt");
 }
-__attribute__((interrupt)) void stack_segment_falut_handler(interrupt_frame_t* frame, uint64_t error_code) {
+__attribute__((interrupt)) void stack_segment_fault_handler(interrupt_frame_t* frame, uint64_t error_code) {
     char raw_stack[8];
     __builtin_memcpy(raw_stack, (void*)&error_code, 8);
     bytes_to_hex_string(raw_stack, sizeof(raw_stack), (char*)console);
+	console[3 * 9] = 'S';
+	console[3 * 9 + 1] = 'S';
     for (int i = 0; i < gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight; i++) {
         uint8_t Red = 255;
         uint8_t Green = 255;
@@ -775,6 +827,7 @@ __attribute__((interrupt)) void stack_segment_falut_handler(interrupt_frame_t* f
 void init_interrupts() {
     asm volatile ("cli");
     BootInfo* gBootInfo = (BootInfo*)0xFFFFFFFF00200000ull;
+    uart_init();
 	init_allocators(gBootInfo->physbm, gBootInfo->physbm_size);
     init_tasks();
     init_apic();
@@ -783,21 +836,19 @@ void init_interrupts() {
     }
 	set_idt_gate(13, (uint64_t)general_protection_fault_handler, 0x08, 0x8E);
 	set_idt_gate(14, (uint64_t)page_fault_handler, 0x08, 0x8E);
-	set_idt_gate(12, (uint64_t)stack_segment_falut_handler, 0x08, 0x8E);
+	set_idt_gate(12, (uint64_t)stack_segment_fault_handler, 0x08, 0x8E);
 
     set_idt_gate(32, (uint64_t)timer_handler, 0x08, 0x8E);
     set_idt_gate(33, (uint64_t)keyboard_handler, 0x08, 0x8E);
-    set_idt_gate(0x2C, (uint64_t)dummy_mouse_handler, 0x08, 0x8E);
+    //set_idt_gate(0x2C, (uint64_t)dummy_mouse_handler, 0x08, 0x8E);
     load_idt();
-	//asm volatile ("sti");
+	asm volatile ("sti");
 }
 extern "C" uint64_t _rsp = 0xFF;
 int x, y, i;
-char raw_stack[24];
+char raw_stack[1000];
 extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
 	//__asm__ __volatile__("hlt");
-	
-    //__asm__ __volatile__("hlt");
     init_interrupts();
     
     __asm__ __volatile__(
@@ -806,6 +857,23 @@ extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
         //"mov rdi, rsp\n\t"
         //"mov rsp, 0x600000\n\t"
         "mov rsp, %[in]\n\t"
+        /*
+        "pop r15\n\t"
+        "pop r14\n\t"
+        "pop r13\n\t"
+        "pop r12\n\t"
+        "pop r11\n\t"
+        "pop r10\n\t"
+        "pop r9\n\t"
+        "pop r8\n\t"
+        "pop rbp\n\t"
+        "pop rdi\n\t"
+        "pop rsi\n\t"
+        "pop rdx\n\t"
+        "pop rcx\n\t"
+        "pop rbx\n\t"
+        "pop rax\n\t"
+        */
         /*
         "and rsp, -16\n\t"
         "sub rsp, 8\n\t"
@@ -817,7 +885,7 @@ extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
         "push rax\n\t"
         "push %[entry]\n\t"
         */
-        "iretq\n\t"
+        //"iretq\n\t"
 		"mov %[out], rsp\n\t"
         /*
         "call .tetestst\n\t"
@@ -842,15 +910,17 @@ extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
     //BootInfo* gGraphicsInfo = (BootInfo*)0xFFFFFFFF00200000ull;
     //console[3] = 'B';
     //__asm__ __volatile__("hlt");
-    for (i = 0; i < gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight; i++) {
-        *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i) = 0xFFFFFF;
-    }
     while (1) {
+		simple_memcpy(console, uart_buf, 3 * 8 * 20);
+        bytes_to_hex_string((char*)next, 8 * 20, (char*)console + 7 * 96);
+        for (i = 0; i < gGraphicsInfo->framebufferPitch * gGraphicsInfo->framebufferHeight; i++) {
+            *((uint32_t*)(gGraphicsInfo->framebufferAddr) + i) = 0xFFFFFF;
+        }
         for (y = 0; y < 40; y++) {
-            for (x = 0; x < 100; x++) {
-                putc(gGraphicsInfo, x * 1 * 8 + 4, y * 2 * 16 + 4, console[y * 100 + x], 0, 1);
+            for (x = 0; x < 96; x++) {
+                putc(gGraphicsInfo, x * 1 * 8 + 4, y * 2 * 16 + 4, console[y * 96 + x], 0, 1);
             }
         }
-		__asm__ __volatile__("iretq");
+		__asm__ __volatile__("hlt");
     }
 }

@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>wsl clang -c -m64 -ffreestanding -fno-zero-initialized-in-bss -O2 -fomit-frame-pointer -g /mnt/c/Users/nanno/desktop/myos/myos/main.cpp -o /mnt/c/Users/nanno/desktop/myos/main.o -masm=intel -std=c++20
+    <NMakeBuildCommandLine>wsl clang -c -m64 -ffreestanding -fno-zero-initialized-in-bss -O2 -g /mnt/c/Users/nanno/desktop/myos/myos/main.cpp -o /mnt/c/Users/nanno/desktop/myos/main.o -masm=intel -std=c++20
 wsl ld -nostdlib /mnt/c/Users/nanno/desktop/myos/main.o -o /mnt/c/Users/nanno/desktop/myos/os.img
 wsl objcopy -O binary --only-section=.text --only-section=.rodata --only-section=.data /mnt/c/Users/nanno/desktop/myos/os.img /mnt/c/Users/nanno/desktop/myos/disk.img</NMakeBuildCommandLine>
   </PropertyGroup>
