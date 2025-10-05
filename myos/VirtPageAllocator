@@ -23,6 +23,9 @@ public:
     void* pml4; // 커널 가상주소(= HHDM + PML4 물리)로 보관
     void init(PhysPageAllocator* _phy_allocator);
     uint64_t alloc_virt_page(uint64_t va, uint64_t pa, uint64_t flags);
+    uint64_t alloc_virt_pages(uint64_t va, uint64_t pa, uint64_t size, uint64_t flags);
+    void free_virt_page(uint64_t va);
+    void free_virt_pages(uint64_t va, uint64_t size);
 };
 
 #endif // __VIRT_PAGE_ALLOCATOR__

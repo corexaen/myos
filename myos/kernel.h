@@ -14,13 +14,14 @@ typedef struct {
     uint16_t pci_bus;
     uint16_t pci_slot;
     uint16_t pci_func;
+    uint32_t port_or_ns;
 } boot_device_info_t;
 typedef struct {
     uint64_t framebufferAddr;
     uint32_t framebufferWidth;
     uint32_t framebufferHeight;
     uint32_t framebufferPitch;
-    uint8_t* physbm;
+    uint64_t* physbm;
     uint64_t physbm_size;
     void* rsdp;
     boot_device_info_t bootdev;

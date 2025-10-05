@@ -10,8 +10,8 @@ inline void _unlockp() {
 uint64_t PhysPageAllocator::alloc_phy_page() {
     _lockp();
     for (uint64_t i = 0; i < (total_pages + 63) / 64; i++) {
-        if (bitmap[i] != 0xFF) { // 아직 빈 페이지가 있음
-            for (int j = 0; j < 8; j++) {
+        if (bitmap[i] != 0xFFFFFFFFFFFFFFFF) { // 아직 빈 페이지가 있음
+            for (int j = 0; j < 64; j++) {
                 if (!(bitmap[i] & (1ULL << j))) { // 빈 페이지 발견
                     bitmap[i] |= (1ULL << j);
                     used_pages++;
@@ -36,7 +36,7 @@ void PhysPageAllocator::free_phy_page(uint64_t addr) {
     _unlockp();
 }
 PhysPageAllocator::PhysPageAllocator() = default;
-void PhysPageAllocator::init(uint8_t* _bitmap, uint64_t _total_pages) {
+void PhysPageAllocator::init(uint64_t* _bitmap, uint64_t _total_pages) {
     total_pages = _total_pages;
     bitmap = _bitmap;
 	used_pages = 0;

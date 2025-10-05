@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>ClangCL</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -74,6 +74,7 @@
     <NMakeBuildCommandLine>wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>wsl make clean
 wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
+    <AdditionalOptions>CppProperties.json.json</AdditionalOptions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -132,9 +133,11 @@ wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ahci.cpp" />
     <ClCompile Include="allocator.cpp" />
     <ClCompile Include="console.cpp" />
     <ClCompile Include="entry.cpp" />
+    <ClCompile Include="gpt.cpp" />
     <ClCompile Include="handler.cpp" />
     <ClCompile Include="idt.cpp" />
     <ClCompile Include="io.cpp" />
@@ -145,6 +148,7 @@ wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
     <ClCompile Include="Makefile" />
     <ClCompile Include="memory.cpp" />
     <ClCompile Include="msr.cpp" />
+    <ClCompile Include="pci.cpp" />
     <ClCompile Include="PhysPageAllocator.cpp" />
     <ClCompile Include="rsp.cpp" />
     <ClCompile Include="timer_handler.cpp" />
@@ -157,6 +161,7 @@ wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
     <None Include="linker.ld" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ahci.h" />
     <ClInclude Include="console.h" />
     <ClInclude Include="handler.h" />
     <ClInclude Include="idt.h" />
@@ -167,6 +172,7 @@ wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
     <ClInclude Include="log.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="msr.h" />
+    <ClInclude Include="pci.h" />
     <ClInclude Include="PhysPageAllocator">
       <FileType>CppHeader</FileType>
     </ClInclude>

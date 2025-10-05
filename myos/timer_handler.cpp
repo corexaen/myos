@@ -4,7 +4,6 @@
 #include "log.h"
 #include "util.h"
 #include "memory.h"
-
 char uart_buf[1000];
 extern "C" __attribute__((noinline, no_caller_saved_registers)) uint64_t* c_timer_handler(context_t* frame) {
     current = next;

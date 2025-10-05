@@ -9,6 +9,7 @@
 #include "lapic.h"
 #include "handler.h"
 #include "timer_handler.h"
+#include "pci.h"
 
 // 최종 APIC 초기화
 void init_apic() {
@@ -78,8 +79,6 @@ void init_tasks() {
 
 static uint8_t console[100 * 40] = { 0, };
 
-
-
 void init_interrupts() {
     asm volatile ("cli");
     uart_init();
@@ -97,68 +96,39 @@ void init_interrupts() {
     set_idt_gate(33, (uint64_t)keyboard_handler, 0x08, 0x8E);
     //set_idt_gate(0x2C, (uint64_t)dummy_mouse_handler, 0x08, 0x8E);
     load_idt();
-	asm volatile ("sti");
+	//asm volatile ("sti");
 }
 extern "C" uint64_t _rsp = 0xFF;
 int x, y, i;
 char raw_stack[1000];
 extern char uart_buf[1000];
+char testbuf[PageSize * 3 + 1];
+
+//일단 콘솔부터
 extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
-	//__asm__ __volatile__("hlt");
     init_interrupts();
-    
+    HBA_MEM* hba = pci_init();
+    uint64_t buf_phys = phy_page_allocator->alloc_phy_page();
+	virt_page_allocator->alloc_virt_page(buf_phys, buf_phys, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD);
+	memset((void*)buf_phys, 1, PageSize);
+    ahci_identify(hba->ports + bootinfo->bootdev.port_or_ns,(void*)buf_phys);
+
+	bytes_to_hex_string((char*)buf_phys, 512, testbuf);
+	uart_print("LBA1:\n");
+	uart_print(testbuf);
+    /*
+    __asm__ __volatile__("hlt");
     __asm__ __volatile__(
-        
-        //"push rdi\n\t"
-        //"mov rdi, rsp\n\t"
-        //"mov rsp, 0x600000\n\t"
         "mov rsp, %[in]\n\t"
-        /*
-        "pop r15\n\t"
-        "pop r14\n\t"
-        "pop r13\n\t"
-        "pop r12\n\t"
-        "pop r11\n\t"
-        "pop r10\n\t"
-        "pop r9\n\t"
-        "pop r8\n\t"
-        "pop rbp\n\t"
-        "pop rdi\n\t"
-        "pop rsi\n\t"
-        "pop rdx\n\t"
-        "pop rcx\n\t"
-        "pop rbx\n\t"
-        "pop rax\n\t"
-        */
-        /*
-        "and rsp, -16\n\t"
-        "sub rsp, 8\n\t"
-        "pushfq\n\t"
-        "pop rax\n\t"
-        "or rax, 0x200\n\t"
-        "push rax\n\t"
-        "mov rax, 0x08\n\t"
-        "push rax\n\t"
-        "push %[entry]\n\t"
-        */
-        //"iretq\n\t"
+        "iretq\n\t"
 		"mov %[out], rsp\n\t"
-        /*
-        "call .tetestst\n\t"
-        ".tetestst:\n\t"
-        "pop rax\n\t"
-        "mov %[out], rax\n\t"
-        */
-		//"sub rsp, 8\n\t"
-        //"mov rsp, rdi\n\t"
-        //"pop rdi\n\t"
         
         :
     [out] "=m"(_rsp)              // 전역 변수 memory output
-        : [in] "m"(current),
-        [entry] "r"(task1_func)
+        : [in] "m"(current)
         : "rax", "memory"
         );
+        */
     memcpy(raw_stack, (void*)&_rsp, 8);
     bytes_to_hex_string(raw_stack, 8, (char*)console);
     memcpy(raw_stack, (void*)_rsp, 24);
@@ -167,7 +137,7 @@ extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
     //__asm__ __volatile__("hlt");
     while (1) {
 		memcpy(console, uart_buf, 3 * 8 * 20);
-        bytes_to_hex_string((char*)next, 8 * 20, (char*)console + 7 * 96);
+        bytes_to_hex_string((char*)buf_phys, 512, (char*)console + 7 * 96);
         for (i = 0; i < bootinfo->framebufferPitch * bootinfo->framebufferHeight; i++) {
             *((uint32_t*)(bootinfo->framebufferAddr) + i) = 0xFFFFFF;
         }

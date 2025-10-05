@@ -26,3 +26,65 @@ void uart_print(const char* s) {
         uart_putc(*s++);
     }
 }
+
+void uart_print(int n) {
+    if (n < 0) {
+        uart_putc('-');
+        n = -n;
+    }
+    if (n == 0) {
+        uart_putc('0');
+        return;
+    }
+    char buf[20];
+    int i = 0;
+    while (n > 0) {
+        buf[i++] = '0' + (n % 10);
+        n /= 10;
+    }
+    while (i--) {
+        uart_putc(buf[i]);
+    }
+}
+void uart_print(unsigned int n) {
+    if (n == 0) {
+        uart_putc('0');
+        return;
+    }
+    char buf[20];
+    int i = 0;
+    while (n > 0) {
+        buf[i++] = '0' + (n % 10);
+        n /= 10;
+    }
+    while (i--) {
+        uart_putc(buf[i]);
+    }
+}
+void uart_print(uint64_t n) {
+    if (n == 0) {
+        uart_putc('0');
+        return;
+    }
+    char buf[20];
+    int i = 0;
+    while (n > 0) {
+        buf[i++] = '0' + (n % 10);
+        n /= 10;
+    }
+    while (i--) {
+        uart_putc(buf[i]);
+    }
+}
+void uart_print_hex(uint64_t n) {
+    const char* hex_digits = "0123456789ABCDEF";
+    char buf[16];
+    int i = 0;
+    while (n > 0) {
+        buf[i++] = hex_digits[n % 16];
+        n /= 16;
+    }
+    while (i--) {
+        uart_putc(buf[i]);
+    }
+}

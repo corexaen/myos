@@ -43,6 +43,12 @@
     <Filter Include="src\init">
       <UniqueIdentifier>{b390a39c-aa71-4ae6-bd67-8a84e4b2b259}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\filesys">
+      <UniqueIdentifier>{a5d619ac-70c7-4b1e-9172-59a39501763f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\filesys">
+      <UniqueIdentifier>{33a433b7-63d9-4e28-a2d1-dcd6bd8fe9ae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Makefile" />
@@ -100,6 +106,15 @@
     <ClCompile Include="rsp.cpp">
       <Filter>src\arch</Filter>
     </ClCompile>
+    <ClCompile Include="pci.cpp">
+      <Filter>src\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="ahci.cpp">
+      <Filter>src\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="gpt.cpp">
+      <Filter>src\filesys</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="linker.ld" />
@@ -154,6 +169,12 @@
       <Filter>include\arch</Filter>
     </ClInclude>
     <ClInclude Include="rsp.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="pci.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="ahci.h">
       <Filter>include\arch</Filter>
     </ClInclude>
   </ItemGroup>
