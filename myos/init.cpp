@@ -10,6 +10,16 @@
 #include "handler.h"
 #include "timer_handler.h"
 #include "pci.h"
+#include "gpt.h"
+#include "FAT32.h"
+#include "disk.h"
+
+//pml4
+//256 heap
+//509 mmio
+//510 HHDM
+//511 kernel + bootdata
+
 
 // 최종 APIC 초기화
 void init_apic() {
@@ -79,6 +89,11 @@ void init_tasks() {
 
 static uint8_t console[100 * 40] = { 0, };
 
+__attribute__((interrupt))  void user_test(interrupt_frame_t* frame) {
+	uart_print("user_test\n");
+    return;
+}
+
 void init_interrupts() {
     asm volatile ("cli");
     uart_init();
@@ -95,6 +110,7 @@ void init_interrupts() {
     set_idt_gate(32, (uint64_t)timer_handler, 0x08, 0x8E);
     set_idt_gate(33, (uint64_t)keyboard_handler, 0x08, 0x8E);
     //set_idt_gate(0x2C, (uint64_t)dummy_mouse_handler, 0x08, 0x8E);
+	set_idt_gate(0x80, (uint64_t)user_test, 0x08, 0xEE);
     load_idt();
 	//asm volatile ("sti");
 }
@@ -108,15 +124,21 @@ char testbuf[PageSize * 3 + 1];
 extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
     init_interrupts();
     HBA_MEM* hba = pci_init();
-    uint64_t buf_phys = phy_page_allocator->alloc_phy_page();
-	virt_page_allocator->alloc_virt_page(buf_phys, buf_phys, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD);
-	memset((void*)buf_phys, 1, PageSize);
-    ahci_identify(hba->ports + bootinfo->bootdev.port_or_ns,(void*)buf_phys);
+    uint64_t buf_phys = phy_page_allocator->alloc_phy_page() + MMIO_BASE;
+	virt_page_allocator->alloc_virt_page(buf_phys, buf_phys - MMIO_BASE, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD);
+	memset((void*)buf_phys, 0, PageSize);
+    ahci_read(hba->ports + bootinfo->bootdev.port_or_ns, 1, 1, (void*)buf_phys);
 
-	bytes_to_hex_string((char*)buf_phys, 512, testbuf);
-	uart_print("LBA1:\n");
+    FAT32 fs;
+	fs.init(init_gpt(hba->ports, (void*)buf_phys), 0, (void*)buf_phys);
+    uint32_t filesize = fs.get_file_size("TASK.O");
+	uart_print("filesize=");
+	uart_print(filesize);
+    uart_print("\n");
+	uint64_t readbuffer = phy_page_allocator->alloc_phy_page() + HHDM_BASE;
+	fs.read_file("TASK.O", (void*)readbuffer, filesize);
+	bytes_to_hex_string((char*)readbuffer, filesize, testbuf);
 	uart_print(testbuf);
-    /*
     __asm__ __volatile__("hlt");
     __asm__ __volatile__(
         "mov rsp, %[in]\n\t"
@@ -128,7 +150,7 @@ extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
         : [in] "m"(current)
         : "rax", "memory"
         );
-        */
+        
     memcpy(raw_stack, (void*)&_rsp, 8);
     bytes_to_hex_string(raw_stack, 8, (char*)console);
     memcpy(raw_stack, (void*)_rsp, 24);

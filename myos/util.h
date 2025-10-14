@@ -1,6 +1,6 @@
 #ifndef __UTIL_H__
 #define __UTIL_H__
-
+#include "kernel.h"
 extern int __rand_seed;
 
 __attribute__((no_caller_saved_registers))
@@ -21,7 +21,17 @@ static inline void bytes_to_hex_string(const char* src, int len, char* dst) {
     }
     dst[len * 3] = '\0';  // null-terminate
 }
+static inline bool is_all_zero(const void* ptr, unsigned long long size) {
+    const unsigned char* p = (const unsigned char*)ptr;
+    for (unsigned long long i = 0; i < size; i++) {
+        if (p[i] != 0) {
+            return false;
+        }
+    }
+    return true;
+}
 extern "C" __attribute__((naked, noinline)) void simple_hlt();
 inline void* operator new(unsigned long, void* p) noexcept { return p; }
 inline void* operator new[](unsigned long, void* p) noexcept { return p; }
+
 #endif // __UTIL_H__

@@ -114,7 +114,7 @@ struct HBA_CMD_TBL {
     HBA_PRDT_ENTRY prdt_entry[1]; // 실제 엔트리는 prdtl 개수만큼
 } __attribute__((packed));
 
-int ahci_read(volatile HBA_PORT* port, uint64_t lba, uint32_t count, void* buf) {
+int ahci_read(volatile HBA_PORT* port, uint64_t lba, uint32_t count, void* mmio_based_buf) {
     // ====== 1. 포트 정지 ======
     port->cmd &= ~0x1;                  // ST=0
     while (port->cmd & (1 << 15));      // CR=1 → 클리어될 때까지 대기
@@ -125,16 +125,16 @@ int ahci_read(volatile HBA_PORT* port, uint64_t lba, uint32_t count, void* buf) 
     // ====== 2. Command List/FIS/CT 영역 확보 ======
     uint64_t mem = phy_page_allocator->alloc_phy_page();
     virt_page_allocator->alloc_virt_page(
-        mem, mem, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD
+        mem + MMIO_BASE, mem, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD
     );
 
     uint64_t cl_phys = mem;         // Command List Base (1KB aligned)
     uint64_t fb_phys = mem + 0x400; // FIS Base (256B aligned)
     uint64_t ct_phys = mem + 0x800; // Command Table Base (128B aligned)
 
-    memset((void*)cl_phys, 0, 1024);  // CLB 전체 클리어
-    memset((void*)fb_phys, 0, 256);   // FB 전체 클리어
-    memset((void*)ct_phys, 0, 256);   // CT 초기화
+    memset((void*)(cl_phys + MMIO_BASE), 0, 1024);  // CLB 전체 클리어
+    memset((void*)(fb_phys + MMIO_BASE), 0, 256);   // FB 전체 클리어
+    memset((void*)(ct_phys + MMIO_BASE), 0, 256);   // CT 초기화
 
     // ====== 3. 포트 레지스터에 주소 등록 ======
     port->clb = (uint32_t)(cl_phys & 0xFFFFFFFF);
@@ -143,7 +143,7 @@ int ahci_read(volatile HBA_PORT* port, uint64_t lba, uint32_t count, void* buf) 
     port->fbu = (uint32_t)(fb_phys >> 32);
 
     // ====== 4. Command Header 세팅 ======
-    HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)cl_phys;
+    HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(cl_phys + MMIO_BASE);
     cmdheader[0].cfl = sizeof(FIS_REG_H2D) / sizeof(uint32_t); // 5 DWORDs
     cmdheader[0].w = 0;       // 읽기
     cmdheader[0].prdtl = 1;       // PRDT 엔트리 하나
@@ -151,8 +151,8 @@ int ahci_read(volatile HBA_PORT* port, uint64_t lba, uint32_t count, void* buf) 
     cmdheader[0].ctbau = (uint32_t)(ct_phys >> 32);
 
     // ====== 5. Command Table/PRDT ======
-    HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)ct_phys;
-    uint64_t buf_phys = (uint64_t)buf;
+    HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)(ct_phys + MMIO_BASE);
+    uint64_t buf_phys = (uint64_t)mmio_based_buf - MMIO_BASE;
 
     cmdtbl->prdt_entry[0].dba = (uint32_t)(buf_phys & 0xFFFFFFFF);
     cmdtbl->prdt_entry[0].dbau = (uint32_t)(buf_phys >> 32);
@@ -191,17 +191,19 @@ int ahci_read(volatile HBA_PORT* port, uint64_t lba, uint32_t count, void* buf) 
     // ====== 9. 완료 대기 ======
     while (port->ci & 1);                     // CI 클리어 기다림
     while (port->tfd & (0x80 | 0x08));        // BSY/DRQ 클리어 기다림
-
-    uart_print("is=");
+    /*
+    uart_print("\nis=");
     uart_print(port->is);
     uart_print(", tfd=");
     uart_print(port->tfd);
     uart_print(", serr=");
     uart_print_hex(port->serr);
+    uart_print("\n");
+    */
 
     return 0;
 }
-int ahci_identify(volatile HBA_PORT* port, void* buf) {
+int ahci_identify(volatile HBA_PORT* port, void* mmio_based_buf) {
     // ====== 1. 포트 정지 ======
     port->cmd &= ~0x1;                  // ST=0
     while (port->cmd & (1 << 15));      // CR=1 → 클리어될 때까지 대기
@@ -211,16 +213,16 @@ int ahci_identify(volatile HBA_PORT* port, void* buf) {
 
     // ====== 2. Command List/FIS/CT 메모리 할당 ======
     uint64_t mem = phy_page_allocator->alloc_phy_page();
-    virt_page_allocator->alloc_virt_page(mem, mem,
+    virt_page_allocator->alloc_virt_page(mem + MMIO_BASE, mem,
         VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD);
 
     uint64_t cl_phys = mem;
     uint64_t fb_phys = mem + 0x400;
     uint64_t ct_phys = mem + 0x800;
 
-    memset((void*)cl_phys, 0, 1024);
-    memset((void*)fb_phys, 0, 256);
-    memset((void*)ct_phys, 0, 256);
+    memset((void*)(cl_phys + MMIO_BASE), 0, 1024);
+    memset((void*)(fb_phys + MMIO_BASE), 0, 256);
+    memset((void*)(ct_phys + MMIO_BASE), 0, 256);
 
     port->clb = (uint32_t)(cl_phys & 0xFFFFFFFF);
     port->clbu = (uint32_t)(cl_phys >> 32);
@@ -228,7 +230,7 @@ int ahci_identify(volatile HBA_PORT* port, void* buf) {
     port->fbu = (uint32_t)(fb_phys >> 32);
 
     // ====== 3. Command Header ======
-    HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)cl_phys;
+    HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(cl_phys + MMIO_BASE);
     cmdheader[0].cfl = sizeof(FIS_REG_H2D) / sizeof(uint32_t); // 5 DWORDs
     cmdheader[0].w = 0;      // 읽기
     cmdheader[0].prdtl = 1;      // PRDT 하나
@@ -236,8 +238,8 @@ int ahci_identify(volatile HBA_PORT* port, void* buf) {
     cmdheader[0].ctbau = (uint32_t)(ct_phys >> 32);
 
     // ====== 4. PRDT 설정 ======
-    HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)ct_phys;
-    uint64_t buf_phys = (uint64_t)buf;
+    HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)(ct_phys + MMIO_BASE);
+    uint64_t buf_phys = (uint64_t)mmio_based_buf - MMIO_BASE;
 
     cmdtbl->prdt_entry[0].dba = (uint32_t)(buf_phys & 0xFFFFFFFF);
     cmdtbl->prdt_entry[0].dbau = (uint32_t)(buf_phys >> 32);

@@ -3,6 +3,7 @@
 #include "PhysPageAllocator"
 #include "size.h"
 #define HHDM_BASE 0xFFFFFF0000000000ULL
+#define MMIO_BASE 0xFFFFFE8000000000ULL
 class VirtPageAllocator {
 private:
     static inline void invlpg(void* addr);
@@ -26,6 +27,7 @@ public:
     uint64_t alloc_virt_pages(uint64_t va, uint64_t pa, uint64_t size, uint64_t flags);
     void free_virt_page(uint64_t va);
     void free_virt_pages(uint64_t va, uint64_t size);
+    uint64_t get_mapping(uint64_t va);
 };
 
 #endif // __VIRT_PAGE_ALLOCATOR__

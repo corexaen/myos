@@ -136,9 +136,13 @@ wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
     <ClCompile Include="ahci.cpp" />
     <ClCompile Include="allocator.cpp" />
     <ClCompile Include="console.cpp" />
+    <ClCompile Include="disk.cpp" />
+    <ClCompile Include="disksid.cpp" />
     <ClCompile Include="entry.cpp" />
+    <ClCompile Include="FAT32.cpp" />
     <ClCompile Include="gpt.cpp" />
-    <ClCompile Include="handler.cpp" />
+    <ClCompile Include="handlers.cpp" />
+    <ClCompile Include="handler_PF.cpp" />
     <ClCompile Include="idt.cpp" />
     <ClCompile Include="io.cpp" />
     <ClCompile Include="ioapic.cpp" />
@@ -163,6 +167,10 @@ wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
   <ItemGroup>
     <ClInclude Include="ahci.h" />
     <ClInclude Include="console.h" />
+    <ClInclude Include="disk.h" />
+    <ClInclude Include="disksid.h" />
+    <ClInclude Include="FAT32.h" />
+    <ClInclude Include="gpt.h" />
     <ClInclude Include="handler.h" />
     <ClInclude Include="idt.h" />
     <ClInclude Include="io.h" />
@@ -182,6 +190,7 @@ wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
     <ClInclude Include="util.h" />
     <ClInclude Include="VirtPageAllocator">
       <FileType>Document</FileType>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
     </ClInclude>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -6,7 +6,8 @@ volatile uint64_t lapic_base;
 
 void init_lapic_base() {
     lapic_base = rdmsr(0x1B) & 0xFFFFF000;  // 하위 12비트는 무시
-    virt_page_allocator->alloc_virt_page(lapic_base, lapic_base, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD);
+	lapic_base += MMIO_BASE; // MMIO 오프셋 더하기
+    virt_page_allocator->alloc_virt_page(lapic_base, lapic_base - MMIO_BASE, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD);
 }
 
 // PIC 비활성화

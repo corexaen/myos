@@ -1,9 +1,9 @@
 #include "ioapic.h"
 #include "allocator"
-#define IOAPIC_BASE  0xFEC00000
+#define IOAPIC_BASE  (MMIO_BASE + 0xFEC00000ULL)
 
 void init_ioapic_base() {
-    virt_page_allocator->alloc_virt_page(IOAPIC_BASE, IOAPIC_BASE, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD);
+    virt_page_allocator->alloc_virt_page(IOAPIC_BASE, IOAPIC_BASE - MMIO_BASE, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD);
 }
 
 static inline void ioapic_write(uint8_t reg, uint32_t value) {

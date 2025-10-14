@@ -49,6 +49,12 @@
     <Filter Include="src\filesys">
       <UniqueIdentifier>{33a433b7-63d9-4e28-a2d1-dcd6bd8fe9ae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\driver">
+      <UniqueIdentifier>{b650e7dd-2151-4030-a759-b63bd88e6e5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\driver">
+      <UniqueIdentifier>{3aa3db1c-741c-406c-9981-bd26ba99ae93}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Makefile" />
@@ -100,7 +106,7 @@
     <ClCompile Include="timer_handler.cpp">
       <Filter>src\kernel</Filter>
     </ClCompile>
-    <ClCompile Include="handler.cpp">
+    <ClCompile Include="handlers.cpp">
       <Filter>src\arch</Filter>
     </ClCompile>
     <ClCompile Include="rsp.cpp">
@@ -109,11 +115,23 @@
     <ClCompile Include="pci.cpp">
       <Filter>src\arch</Filter>
     </ClCompile>
-    <ClCompile Include="ahci.cpp">
-      <Filter>src\arch</Filter>
-    </ClCompile>
     <ClCompile Include="gpt.cpp">
       <Filter>src\filesys</Filter>
+    </ClCompile>
+    <ClCompile Include="handler_PF.cpp">
+      <Filter>src\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="disksid.cpp">
+      <Filter>src\filesys</Filter>
+    </ClCompile>
+    <ClCompile Include="FAT32.cpp">
+      <Filter>src\filesys</Filter>
+    </ClCompile>
+    <ClCompile Include="ahci.cpp">
+      <Filter>src\driver</Filter>
+    </ClCompile>
+    <ClCompile Include="disk.cpp">
+      <Filter>src\driver</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -174,8 +192,20 @@
     <ClInclude Include="pci.h">
       <Filter>include\arch</Filter>
     </ClInclude>
+    <ClInclude Include="gpt.h">
+      <Filter>include\filesys</Filter>
+    </ClInclude>
+    <ClInclude Include="FAT32.h">
+      <Filter>include\filesys</Filter>
+    </ClInclude>
+    <ClInclude Include="disksid.h">
+      <Filter>include\filesys</Filter>
+    </ClInclude>
     <ClInclude Include="ahci.h">
-      <Filter>include\arch</Filter>
+      <Filter>include\driver</Filter>
+    </ClInclude>
+    <ClInclude Include="disk.h">
+      <Filter>include\driver</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

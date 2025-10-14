@@ -107,7 +107,7 @@ HBA_MEM* pci_init() {
         bootinfo->bootdev.pci_func,
         0x24   // BAR5 low offset
     );
-	virt_page_allocator->alloc_virt_pages(abar_info.addr,abar_info.addr, (abar_info.size + 0xFFF) & ~0xFFFULL, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD);
-	probe_ports((HBA_MEM*)(abar_info.addr));
-	return (HBA_MEM*)(abar_info.addr);
+	virt_page_allocator->alloc_virt_pages(abar_info.addr + MMIO_BASE,abar_info.addr, (abar_info.size + 0xFFF) & ~0xFFFULL, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD);
+	probe_ports((HBA_MEM*)(abar_info.addr + MMIO_BASE));
+	return (HBA_MEM*)(abar_info.addr + MMIO_BASE);
 }

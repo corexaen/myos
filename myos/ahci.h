@@ -41,6 +41,6 @@ struct HBA_MEM {
 } __attribute__((packed));
 
 void probe_ports(HBA_MEM* abar);
-int ahci_read(volatile HBA_PORT* port, uint64_t lba, uint32_t count, void* buf);
-int ahci_identify(volatile HBA_PORT* port, void* buf);
+int ahci_read(volatile HBA_PORT* port, uint64_t lba, uint32_t count, void* mmio_based_buf);
+int ahci_identify(volatile HBA_PORT* port, void* mmio_based_buf);
 #endif /*__AHCI_H__*/
