@@ -162,7 +162,7 @@ wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
   </ItemGroup>
   <ItemGroup>
     <None Include="allocator" />
-    <None Include="linker.ld" />
+    <None Include="linker.lds" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ahci.h" />

@@ -135,7 +135,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="linker.ld" />
+    <None Include="linker.lds" />
     <None Include="allocator">
       <Filter>include\mm</Filter>
     </None>

@@ -8,6 +8,7 @@
 myos/* linguist-language=C++
 Makefile linguist-language=Makefile
 *.ld linguist-language=LinkerScript
+*.lds linguist-language=LinkerScript
 ###############################################################################
 # Set default behavior for command prompt diff.
 #
