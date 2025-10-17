@@ -22,4 +22,7 @@ void uart_print(unsigned int n);
 __attribute__((no_caller_saved_registers))
 void uart_print_hex(uint64_t n);
 
+__attribute__((no_caller_saved_registers))
+void uart_print_hex2(uint8_t n);
+
 #endif // __LOG_H__

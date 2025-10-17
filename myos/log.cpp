@@ -88,3 +88,10 @@ void uart_print_hex(uint64_t n) {
         uart_putc(buf[i]);
     }
 }
+void uart_print_hex2(uint8_t n) {
+    const char* hex_digits = "0123456789ABCDEF";
+    char buf[16];
+    int i = 0;
+    uart_putc(hex_digits[n >> 4]);
+    uart_putc(hex_digits[n & 0xF]);
+}

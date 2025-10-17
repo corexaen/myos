@@ -133,6 +133,9 @@
     <ClCompile Include="disk.cpp">
       <Filter>src\driver</Filter>
     </ClCompile>
+    <ClCompile Include="process.cpp">
+      <Filter>src\kernel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="linker.ld" />
@@ -206,6 +209,9 @@
     </ClInclude>
     <ClInclude Include="disk.h">
       <Filter>include\driver</Filter>
+    </ClInclude>
+    <ClInclude Include="process.h">
+      <Filter>include\kernel</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -7,6 +7,7 @@
 #include "lapic.h"
 #include "memory.h"
 #include "allocator"
+#include "process.h"
 
 static uint8_t console[100 * 40] = { 0, }; // 디버깅용 콘솔 버퍼
 
@@ -20,6 +21,13 @@ void page_fault_handler(interrupt_frame_t* frame, uint64_t error_code) {
 		uart_print_hex(cr2);
 		uart_print("\n");
 	}
+    else if (((error_code & (1ull << 2ull)) & 1) == 1 && now_process->user_stack_top <= cr2 && cr2 <= now_process->user_stack_bottom) {
+        virt_page_allocator->alloc_virt_page(cr2 & ~0xFFFULL, phy_page_allocator->alloc_phy_page(), VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::US);
+        memset((void*)(cr2 & ~0xFFFULL), 0, PageSize);
+        uart_print("on-demand page allocation for ");
+        uart_print_hex(cr2);
+        uart_print("\n");
+    }
     else {
         char raw_stack[16];
         memcpy(raw_stack, (void*)&cr2, 8);

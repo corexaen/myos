@@ -1,9 +1,9 @@
-CXX = clang++
+CXX = gcc
 LD = ld
 OBJCOPY = objcopy
 
-CXXFLAGS = -m64 -ffreestanding -fno-rtti -fno-exceptions -fno-zero-initialized-in-bss \
-           -O2 -g -masm=intel -std=c++20
+CXXFLAGS = -m64 -ffreestanding -fno-rtti -fno-exceptions -fno-zero-initialized-in-bss -fno-common \
+           -O2 -g -masm=intel -std=c++20 -mno-sse -mno-sse2 -mno-mmx -mno-3dnow -mno-80387 -msoft-float
 LDFLAGS = -nostdlib -T linker.ld
 
 # 소스와 오브젝트 자동 탐색

@@ -22,7 +22,9 @@ public:
     static constexpr uint64_t NX = 1ull << 63;
     VirtPageAllocator();
     void* pml4; // 커널 가상주소(= HHDM + PML4 물리)로 보관
-    void init(PhysPageAllocator* _phy_allocator);
+    static uint64_t getCr3();
+    void setCr3();
+    void init(PhysPageAllocator* phy_allocator, uint64_t pml4 = 0);
     uint64_t alloc_virt_page(uint64_t va, uint64_t pa, uint64_t flags);
     uint64_t alloc_virt_pages(uint64_t va, uint64_t pa, uint64_t size, uint64_t flags);
     void free_virt_page(uint64_t va);

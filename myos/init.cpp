@@ -13,6 +13,7 @@
 #include "gpt.h"
 #include "FAT32.h"
 #include "disk.h"
+#include "process.h"
 
 //pml4
 //256 heap
@@ -95,10 +96,7 @@ __attribute__((interrupt))  void user_test(interrupt_frame_t* frame) {
 }
 
 void init_interrupts() {
-    asm volatile ("cli");
-    uart_init();
 	init_allocators(bootinfo->physbm, bootinfo->physbm_size);
-    init_tasks();
     init_apic();
     for (int i = 0; i < IDT_SIZE; i++) {
         set_idt_gate(i, (uint64_t)none_handler, 0x08, 0x8E);
@@ -122,6 +120,9 @@ char testbuf[PageSize * 3 + 1];
 
 //일단 콘솔부터
 extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
+    asm volatile ("cli");
+    uart_init();
+    init_tss(0, 0);
     init_interrupts();
     HBA_MEM* hba = pci_init();
     uint64_t buf_phys = phy_page_allocator->alloc_phy_page() + MMIO_BASE;
@@ -139,7 +140,12 @@ extern "C" __attribute__((force_align_arg_pointer, noinline)) void main() {
 	fs.read_file("TASK.O", (void*)readbuffer, filesize);
 	bytes_to_hex_string((char*)readbuffer, filesize, testbuf);
 	uart_print(testbuf);
-    __asm__ __volatile__("hlt");
+    Process* process = new ((void*)(phy_page_allocator->alloc_phy_page() + HHDM_BASE)) Process();
+    process->init(0x1B, 0x23);
+    process->addCode((void*)readbuffer);
+    init_process(process);
+    uart_print("\ntest\n");
+    jmp_process();
     __asm__ __volatile__(
         "mov rsp, %[in]\n\t"
         "iretq\n\t"

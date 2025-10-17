@@ -62,6 +62,14 @@ void timer_handler() {
         "push r13\n\t"
         "push r14\n\t"
         "push r15\n\t"
+        "mov rax, ds\n\t"
+        "push rax\n\t"
+        "mov rax, es\n\t"
+        "push rax\n\t"
+        "mov rax, fs\n\t"
+        "push rax\n\t"
+        "mov rax, gs\n\t"
+        "push rax\n\t"
         // 이제 스택 상태:
         // [r15][r14]...[rax][RIP][CS][RFLAGS]([RSP][SS]) <- rsp
 
@@ -74,6 +82,14 @@ void timer_handler() {
         // 여기서 복귀만 하면 됨
 
         // pop 순서대로 pop
+        "pop rax\n\t"
+        "mov gs, ax\n\t"
+        "pop rax\n\t"
+        "mov fs, ax\n\t"
+        "pop rax\n\t"
+        "mov es, ax\n\t"
+        "pop rax\n\t"
+        "mov ds, ax\n\t"
         "pop r15\n\t"
         "pop r14\n\t"
         "pop r13\n\t"

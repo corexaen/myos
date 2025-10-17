@@ -12,29 +12,42 @@ inline void VirtPageAllocator::invlpg(void* addr) {
     asm volatile("invlpg [%0]" :: "r"(addr) : "memory");
 }
 VirtPageAllocator::VirtPageAllocator() = default;
-void VirtPageAllocator::init(PhysPageAllocator* _phy_allocator) {
+uint64_t VirtPageAllocator::getCr3() {
     uint64_t cr3;
-    phy_allocator = _phy_allocator;
     asm volatile ("mov %0, cr3" : "=r"(cr3));
-    // CR3 하위 12비트(PCID/플래그) 제거 + HHDM으로 가상화
-    uint64_t pml4_pa = cr3 & ~0xFFFULL;
-    //pml4 = (void*)(HHDM_BASE + pml4_pa);
-    pml4 = (void*)pml4_pa;
+    return cr3;
+}
+void VirtPageAllocator::setCr3() {
+    uint64_t cr3 = (uint64_t)pml4 - HHDM_BASE;
+    asm volatile ("mov cr3, %0" :: "r"(cr3));
+}
+void VirtPageAllocator::init(PhysPageAllocator* phy_allocator, uint64_t pml4) {
+    this->phy_allocator = phy_allocator;
+    if (!pml4) {
+        pml4 = VirtPageAllocator::getCr3() & ~0xFFFULL;
+        pml4 += HHDM_BASE;
+    }
+    this->pml4 = (void*)pml4;
 }
 uint64_t VirtPageAllocator::alloc_virt_page(uint64_t va, uint64_t pa, uint64_t flags) {
     if ((va & 0xFFF) || (pa & 0xFFF)) return ~0ULL; // 정렬 불량
-
+    uart_print("va\n0x");
+    uart_print_hex(va);
+    uart_print("\n0x");
+    uart_print_hex(pa);
+    uart_print("\n");
     _lockv();
     if (va == pa) {
         uart_print("identical mapping\n");
     }
+    uint64_t us = va & (1ULL << 63) ? 0 : US;
     // PML4E
     uint64_t* pml4e = (uint64_t*)pml4 + ((va >> 39) & 0x1FF);
     if (!(*pml4e & P)) {
         uint64_t new_pdpt_pa = phy_allocator->alloc_phy_page();
         if (!new_pdpt_pa) { _unlockv(); return ~0ULL; }
         memset((void*)(HHDM_BASE + new_pdpt_pa), 0, 4096);
-        *pml4e = (new_pdpt_pa & ~0xFFFULL) | RW | P; // User=0(커널)
+        *pml4e = (new_pdpt_pa & ~0xFFFULL) | RW | P | us; // User=0(커널)
     }
 
     // PDPTE
@@ -44,7 +57,7 @@ uint64_t VirtPageAllocator::alloc_virt_page(uint64_t va, uint64_t pa, uint64_t f
         uint64_t new_pd_pa = phy_allocator->alloc_phy_page();
         if (!new_pd_pa) { _unlockv(); return ~0ULL; }
         memset((void*)(HHDM_BASE + new_pd_pa), 0, 4096);
-        *pdpte = (new_pd_pa & ~0xFFFULL) | RW | P;
+        *pdpte = (new_pd_pa & ~0xFFFULL) | RW | P | us;
     }
 
     // PDE
@@ -54,7 +67,7 @@ uint64_t VirtPageAllocator::alloc_virt_page(uint64_t va, uint64_t pa, uint64_t f
         uint64_t new_pt_pa = phy_allocator->alloc_phy_page();
         if (!new_pt_pa) { _unlockv(); return ~0ULL; }
         memset((void*)(HHDM_BASE + new_pt_pa), 0, 4096);
-        *pde = (new_pt_pa & ~0xFFFULL) | RW | P;
+        *pde = (new_pt_pa & ~0xFFFULL) | RW | P | us;
     }
 
     // PTE

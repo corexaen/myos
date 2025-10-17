@@ -8,7 +8,6 @@ void enable_apic();
 void setup_lapic_timer(uint8_t vector);
 #define LAPIC_EOI_REGISTER  0xB0
 
-__attribute__((no_caller_saved_registers))
 static inline void lapic_eoi() {
     *(volatile uint32_t*)(lapic_base + LAPIC_EOI_REGISTER) = 0;
 }

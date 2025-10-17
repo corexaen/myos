@@ -3,7 +3,6 @@
 #include "kernel.h"
 extern int __rand_seed;
 
-__attribute__((no_caller_saved_registers))
 static inline int simple_rand() {
     __rand_seed ^= __rand_seed << 13;
     __rand_seed ^= __rand_seed >> 17;
@@ -11,7 +10,6 @@ static inline int simple_rand() {
     return __rand_seed;
 }
 static const char hex_digits[] = "0123456789ABCDEF";
-__attribute__((no_caller_saved_registers))
 static inline void bytes_to_hex_string(const char* src, int len, char* dst) {
     for (int i = 0; i < len; i++) {
         unsigned char byte = (unsigned char)src[i];

@@ -17,7 +17,10 @@ SECTIONS
     /* 전역/정적 초기화 데이터 */
     .data : {
         *(.data*)
+        *(.bss*)
+        *(COMMON)
     } :data
+
 }
 PHDRS {
   text PT_LOAD FLAGS(5);   /* R + X */
