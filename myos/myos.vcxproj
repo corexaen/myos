@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>ClangCL</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -71,9 +71,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>wsl clang -c -m64 -ffreestanding -fno-zero-initialized-in-bss -O2 -fomit-frame-pointer -g /mnt/c/Users/nanno/desktop/myos/myos/main.cpp -o /mnt/c/Users/nanno/desktop/myos/main.o -masm=intel -std=c++20
-wsl ld -nostdlib /mnt/c/Users/nanno/desktop/myos/main.o -o /mnt/c/Users/nanno/desktop/myos/os.img
-wsl objcopy -O binary --only-section=.text --only-section=.rodata --only-section=.data /mnt/c/Users/nanno/desktop/myos/os.img /mnt/c/Users/nanno/desktop/myos/disk.img</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>wsl make clean
+wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
+    <AdditionalOptions>CppProperties.json.json</AdditionalOptions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -132,8 +133,67 @@ wsl objcopy -O binary --only-section=.text --only-section=.rodata --only-section
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="trash.cpp" />
+    <ClCompile Include="ahci.cpp" />
+    <ClCompile Include="allocator.cpp" />
+    <ClCompile Include="console.cpp" />
+    <ClCompile Include="disk.cpp" />
+    <ClCompile Include="disksid.cpp" />
+    <ClCompile Include="entry.cpp" />
+    <ClCompile Include="FAT32.cpp" />
+    <ClCompile Include="gpt.cpp" />
+    <ClCompile Include="handlers.cpp" />
+    <ClCompile Include="handler_PF.cpp" />
+    <ClCompile Include="idt.cpp" />
+    <ClCompile Include="io.cpp" />
+    <ClCompile Include="ioapic.cpp" />
+    <ClCompile Include="lapic.cpp" />
+    <ClCompile Include="log.cpp" />
+    <ClCompile Include="init.cpp" />
+    <ClCompile Include="Makefile" />
+    <ClCompile Include="memory.cpp" />
+    <ClCompile Include="msr.cpp" />
+    <ClCompile Include="pci.cpp" />
+    <ClCompile Include="PhysPageAllocator.cpp" />
+    <ClCompile Include="process.cpp" />
+    <ClCompile Include="rsp.cpp" />
+    <ClCompile Include="timer_handler.cpp" />
+    <ClCompile Include="trash.cpp_" />
+    <ClCompile Include="util.cpp" />
+    <ClCompile Include="VirtPageAllocator.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="allocator" />
+    <None Include="linker.ld" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ahci.h" />
+    <ClInclude Include="console.h" />
+    <ClInclude Include="disk.h" />
+    <ClInclude Include="disksid.h" />
+    <ClInclude Include="FAT32.h" />
+    <ClInclude Include="gpt.h" />
+    <ClInclude Include="handler.h" />
+    <ClInclude Include="idt.h" />
+    <ClInclude Include="io.h" />
+    <ClInclude Include="ioapic.h" />
+    <ClInclude Include="lapic.h" />
+    <ClInclude Include="kernel.h" />
+    <ClInclude Include="log.h" />
+    <ClInclude Include="memory.h" />
+    <ClInclude Include="msr.h" />
+    <ClInclude Include="pci.h" />
+    <ClInclude Include="PhysPageAllocator">
+      <FileType>CppHeader</FileType>
+    </ClInclude>
+    <ClInclude Include="process.h" />
+    <ClInclude Include="rsp.h" />
+    <ClInclude Include="size.h" />
+    <ClInclude Include="timer_handler.h" />
+    <ClInclude Include="util.h" />
+    <ClInclude Include="VirtPageAllocator">
+      <FileType>Document</FileType>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+    </ClInclude>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

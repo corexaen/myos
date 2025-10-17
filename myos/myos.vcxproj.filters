@@ -1,25 +1,217 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="소스 파일">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="헤더 파일">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
     <Filter Include="리소스 파일">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="src\arch">
+      <UniqueIdentifier>{4c9b14ff-f318-4087-ad1b-d398f91a23c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\kernel">
+      <UniqueIdentifier>{5e03b805-b1cc-41fd-bf03-370ddf9f8ada}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="src\mm">
+      <UniqueIdentifier>{e50494be-4f75-4920-8dd7-82b2a0c15a04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\arch">
+      <UniqueIdentifier>{fcd251cd-f9f1-4b49-9805-b3c4b867acd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\kernel">
+      <UniqueIdentifier>{14c096b3-c9a0-4a4b-a5ae-7186e0430553}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\mm">
+      <UniqueIdentifier>{cf183a62-c3f6-417f-9b7d-22356e3300ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\lib">
+      <UniqueIdentifier>{0282c89b-5f63-4fd9-84c2-a2fca9bdf504}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\debug">
+      <UniqueIdentifier>{54672821-84a2-4b8d-a0de-91b734e00bce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\debug">
+      <UniqueIdentifier>{a84ba04d-3182-4fc5-9d03-c16d470bac97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\init">
+      <UniqueIdentifier>{b390a39c-aa71-4ae6-bd67-8a84e4b2b259}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\filesys">
+      <UniqueIdentifier>{a5d619ac-70c7-4b1e-9172-59a39501763f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\filesys">
+      <UniqueIdentifier>{33a433b7-63d9-4e28-a2d1-dcd6bd8fe9ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\driver">
+      <UniqueIdentifier>{b650e7dd-2151-4030-a759-b63bd88e6e5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\driver">
+      <UniqueIdentifier>{3aa3db1c-741c-406c-9981-bd26ba99ae93}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="Makefile" />
+    <ClCompile Include="io.cpp">
+      <Filter>src\arch</Filter>
     </ClCompile>
-    <ClCompile Include="trash.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="idt.cpp">
+      <Filter>src\arch</Filter>
     </ClCompile>
+    <ClCompile Include="console.cpp">
+      <Filter>src\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysPageAllocator.cpp">
+      <Filter>src\mm</Filter>
+    </ClCompile>
+    <ClCompile Include="VirtPageAllocator.cpp">
+      <Filter>src\mm</Filter>
+    </ClCompile>
+    <ClCompile Include="util.cpp">
+      <Filter>include\lib</Filter>
+    </ClCompile>
+    <ClCompile Include="log.cpp">
+      <Filter>src\debug</Filter>
+    </ClCompile>
+    <ClCompile Include="trash.cpp_">
+      <Filter>src\debug</Filter>
+    </ClCompile>
+    <ClCompile Include="entry.cpp">
+      <Filter>src\init</Filter>
+    </ClCompile>
+    <ClCompile Include="init.cpp">
+      <Filter>src\init</Filter>
+    </ClCompile>
+    <ClCompile Include="msr.cpp">
+      <Filter>src\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="ioapic.cpp">
+      <Filter>src\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="lapic.cpp">
+      <Filter>src\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="allocator.cpp">
+      <Filter>src\mm</Filter>
+    </ClCompile>
+    <ClCompile Include="memory.cpp">
+      <Filter>include\lib</Filter>
+    </ClCompile>
+    <ClCompile Include="timer_handler.cpp">
+      <Filter>src\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="handlers.cpp">
+      <Filter>src\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="rsp.cpp">
+      <Filter>src\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="pci.cpp">
+      <Filter>src\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="gpt.cpp">
+      <Filter>src\filesys</Filter>
+    </ClCompile>
+    <ClCompile Include="handler_PF.cpp">
+      <Filter>src\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="disksid.cpp">
+      <Filter>src\filesys</Filter>
+    </ClCompile>
+    <ClCompile Include="FAT32.cpp">
+      <Filter>src\filesys</Filter>
+    </ClCompile>
+    <ClCompile Include="ahci.cpp">
+      <Filter>src\driver</Filter>
+    </ClCompile>
+    <ClCompile Include="disk.cpp">
+      <Filter>src\driver</Filter>
+    </ClCompile>
+    <ClCompile Include="process.cpp">
+      <Filter>src\kernel</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="linker.ld" />
+    <None Include="allocator">
+      <Filter>include\mm</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="io.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="idt.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="console.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="kernel.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysPageAllocator">
+      <Filter>include\mm</Filter>
+    </ClInclude>
+    <ClInclude Include="VirtPageAllocator">
+      <Filter>include\mm</Filter>
+    </ClInclude>
+    <ClInclude Include="size.h">
+      <Filter>include\lib</Filter>
+    </ClInclude>
+    <ClInclude Include="util.h">
+      <Filter>include\lib</Filter>
+    </ClInclude>
+    <ClInclude Include="log.h">
+      <Filter>include\debug</Filter>
+    </ClInclude>
+    <ClInclude Include="msr.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="lapic.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="ioapic.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="memory.h">
+      <Filter>include\lib</Filter>
+    </ClInclude>
+    <ClInclude Include="timer_handler.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="handler.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="rsp.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="pci.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="gpt.h">
+      <Filter>include\filesys</Filter>
+    </ClInclude>
+    <ClInclude Include="FAT32.h">
+      <Filter>include\filesys</Filter>
+    </ClInclude>
+    <ClInclude Include="disksid.h">
+      <Filter>include\filesys</Filter>
+    </ClInclude>
+    <ClInclude Include="ahci.h">
+      <Filter>include\driver</Filter>
+    </ClInclude>
+    <ClInclude Include="disk.h">
+      <Filter>include\driver</Filter>
+    </ClInclude>
+    <ClInclude Include="process.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

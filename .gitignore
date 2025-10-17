@@ -11,6 +11,9 @@
 *.sln.docstates
 *.sln
 *.bak
+*.o
+*.img
+*.elf
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
