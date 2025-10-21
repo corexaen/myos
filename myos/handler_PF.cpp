@@ -10,24 +10,45 @@
 #include "process.h"
 
 static uint8_t console[100 * 40] = { 0, }; // 디버깅용 콘솔 버퍼
-
+__attribute__((interrupt))
 void page_fault_handler(interrupt_frame_t* frame, uint64_t error_code) {
     uint64_t cr2;
-    asm volatile ("mov %0, cr2" : "=r"(cr2));
-    if(cr2 >= 0xFFFF800000000000 && cr2 <= 0xFFFF807FFFFFFFFF && ((error_code & (1ull << 2ull)) & 1) == 0) {
-		virt_page_allocator->alloc_virt_page(cr2 & ~0xFFFULL, phy_page_allocator->alloc_phy_page(), VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::PCD);
+    __asm__ __volatile__ ("mov %0, cr2" : "=r"(cr2));
+    if(((cr2 >> 39) & 0x1FF) == 256 && !(error_code & (1ull << 2ull))) {
+		virt_page_allocator->alloc_virt_page(cr2 & ~0xFFFULL, phy_page_allocator->alloc_phy_page(), VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::G);
         memset((void*)(cr2 & ~0xFFFULL), 0, PageSize);
 		uart_print("on-demand page allocation for ");
 		uart_print_hex(cr2);
 		uart_print("\n");
 	}
-    else if (((error_code & (1ull << 2ull)) & 1) == 1 && now_process->user_stack_top <= cr2 && cr2 <= now_process->user_stack_bottom) {
+    else  if (((cr2 >> 39) & 0x1FF) == 257 && !(error_code & (1ull << 2ull))) {
+        virt_page_allocator->alloc_virt_page(cr2 & ~0xFFFULL, phy_page_allocator->alloc_phy_page(), VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::G);
+        memset((void*)(cr2 & ~0xFFFULL), 0, PageSize);
+        uart_print("on-demand page allocation for ");
+        uart_print_hex(cr2);
+        uart_print("\n");
+    }
+    else if (now_process->user_stack_top <= cr2 && cr2 < now_process->user_stack_bottom) {
         virt_page_allocator->alloc_virt_page(cr2 & ~0xFFFULL, phy_page_allocator->alloc_phy_page(), VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::US);
         memset((void*)(cr2 & ~0xFFFULL), 0, PageSize);
         uart_print("on-demand page allocation for ");
         uart_print_hex(cr2);
         uart_print("\n");
     }
+    else if (now_process->heap_top <= cr2 && cr2 < now_process->heap_bottom) {
+        virt_page_allocator->alloc_virt_page(cr2 & ~0xFFFULL, phy_page_allocator->alloc_phy_page(), VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::US);
+        memset((void*)(cr2 & ~0xFFFULL), 0, PageSize);
+        uart_print("on-demand page allocation for ");
+        uart_print_hex(cr2);
+        uart_print("\n");
+    }
+    else if (now_process->isAddrInMMap(cr2)) {
+        virt_page_allocator->alloc_virt_page(cr2 & ~0xFFFULL, phy_page_allocator->alloc_phy_page(), VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::US);
+        memset((void*)(cr2 & ~0xFFFULL), 0, PageSize);
+        uart_print("on-demand page allocation for ");
+        uart_print_hex(cr2);
+        uart_print("\n");
+	}
     else {
         char raw_stack[16];
         memcpy(raw_stack, (void*)&cr2, 8);

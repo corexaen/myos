@@ -1,8 +1,11 @@
 #include "PhysPageAllocator"
-
+#include "allocator"
+#include "log.h"
 volatile uint32_t ppaspinv = 0;
 inline void _lockp() {
-	while (__atomic_test_and_set(&ppaspinv, __ATOMIC_ACQUIRE));
+	while (__atomic_test_and_set(&ppaspinv, __ATOMIC_ACQUIRE)) {
+        __asm__ __volatile__("pause");
+    }
 }
 inline void _unlockp() {
 	__atomic_clear(&ppaspinv, __ATOMIC_RELEASE);
@@ -38,7 +41,13 @@ void PhysPageAllocator::free_phy_page(uint64_t addr) {
 PhysPageAllocator::PhysPageAllocator() = default;
 void PhysPageAllocator::init(uint64_t* _bitmap, uint64_t _total_pages) {
     total_pages = _total_pages;
-    bitmap = _bitmap;
+	uart_print("PhysPageAllocator init: total_pages=");
+	uart_print_hex(total_pages);
+	uart_print("\n");
+	uart_print("bitmap addr=");
+	uart_print_hex((uint64_t)_bitmap);
+	uart_print("\n");
+    bitmap = (uint64_t*)((uint64_t)_bitmap | HHDM_BASE);
 	used_pages = 0;
 }
 uint64_t PhysPageAllocator::get_total_pages() const { return total_pages; }

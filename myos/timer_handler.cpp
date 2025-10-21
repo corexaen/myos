@@ -4,17 +4,14 @@
 #include "log.h"
 #include "util.h"
 #include "memory.h"
+#include "process.h"
 char uart_buf[1000];
-extern "C" __attribute__((noinline, no_caller_saved_registers)) uint64_t* c_timer_handler(context_t* frame) {
-    current = next;
-    next = frame;
-    uart_print("timer\n");
-    memset(uart_buf, 0, sizeof(uart_buf));
-    bytes_to_hex_string((char*)current, 8 * 20, uart_buf);
-    uart_print(uart_buf);
-
+extern "C" __attribute__((noinline)) uint64_t* c_timer_handler(context_t* frame) {
+    now_process->kernel_stack = (uint64_t*)frame;
+    now_process = now_process->next;
     lapic_eoi();
-    uint64_t* ret = (uint64_t*)current;
-    asm volatile("" : "+a"(ret));
-    return (uint64_t*)current;
+    jmp_process();
+    //uint64_t* ret = (uint64_t*)current;
+    //asm volatile("" : "+a"(ret));
+    return (uint64_t*)0;
 }

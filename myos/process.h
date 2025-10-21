@@ -3,6 +3,9 @@
 #include "kernel.h"
 #include "size.h"
 #include "allocator"
+
+#define MMAP_ENTRY_BASE 0xFFFF808000000000ULL
+
 struct TSS64 {
     uint32_t reserved0;
     uint64_t rsp0;
@@ -39,7 +42,12 @@ struct GDTR {
 
 __attribute__((optimize("O0"), noinline))
 void init_tss(uint64_t kernel_stack_phys, uint64_t ist1_phys);
-
+struct mmap_entry {
+    uint64_t va_start;
+    uint64_t va_end;
+    uint64_t flags;
+    mmap_entry* next;
+};
 class Process {
 public:
     uint64_t cr3;
@@ -52,9 +60,15 @@ public:
     uint8_t allocator_buffer[sizeof(VirtPageAllocator)];
     uint64_t code_va_base;
     uint64_t* kernel_stack;
+	uint64_t heap_top;
+	uint64_t heap_bottom;
+	mmap_entry* mmap_table;
     Process() = default;
     void init(uint64_t cs, uint64_t ss);
     void addCode(void* code_addr);
+    void setHeap();
+	bool isAddrInMMap(uint64_t va) const;
+	uint64_t mmap(uint64_t size, uint64_t flags);
 };
 extern Process* now_process;
 void init_process(Process* p);

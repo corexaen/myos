@@ -29,7 +29,12 @@ static inline bool is_all_zero(const void* ptr, unsigned long long size) {
     return true;
 }
 extern "C" __attribute__((naked, noinline)) void simple_hlt();
+#ifdef _MSC_VER
+inline void* operator new(unsigned long long, void* p) noexcept { return p; }
+inline void* operator new[](unsigned long long, void* p) noexcept { return p; }
+#else
 inline void* operator new(unsigned long, void* p) noexcept { return p; }
 inline void* operator new[](unsigned long, void* p) noexcept { return p; }
+#endif
 
 #endif // __UTIL_H__

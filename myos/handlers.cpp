@@ -10,6 +10,7 @@
 static uint8_t console[100 * 40] = { 0, }; // 디버깅용 콘솔 버퍼
 
 //todo - 종속 부분과 비종속부분 분리 후 새로운 파일로 구분
+__attribute__((interrupt))
 void keyboard_handler(interrupt_frame_t* frame) {
     uint8_t scancode = inb(0x60);
     for (int i = 0; i < bootinfo->framebufferPitch * bootinfo->framebufferHeight; i++) {
@@ -30,6 +31,7 @@ void keyboard_handler(interrupt_frame_t* frame) {
     */
     lapic_eoi();
 }
+__attribute__((interrupt))
 void dummy_mouse_handler(interrupt_frame_t* frame) {
     inb(0x60);
     for (int i = 0; i < bootinfo->framebufferPitch * bootinfo->framebufferHeight; i++) {
@@ -42,7 +44,7 @@ void dummy_mouse_handler(interrupt_frame_t* frame) {
     }
     lapic_eoi();
 }
-
+__attribute__((naked))
 void timer_handler() {
     asm volatile(
         // 인터럽트 진입시 트랩 프레임이 이미 스택에 있음 (rip, cs, rflags, [rsp, ss])
@@ -111,11 +113,12 @@ void timer_handler() {
         "iretq\n\t"
         );
 }
+__attribute__((interrupt))
 void none_handler(interrupt_frame_t* frame) {
     __asm__ __volatile__("hlt");
     lapic_eoi();
 }
-
+__attribute__((interrupt))
 void general_protection_fault_handler(interrupt_frame_t* frame, uint64_t error_code) {
     for (int i = 0; i < bootinfo->framebufferPitch * bootinfo->framebufferHeight; i++) {
         *((uint32_t*)(bootinfo->framebufferAddr) + i) = 0xFFFFFF;
@@ -134,6 +137,7 @@ void general_protection_fault_handler(interrupt_frame_t* frame, uint64_t error_c
     }
     __asm__ __volatile__("hlt");
 }
+__attribute__((interrupt))
 void stack_segment_fault_handler(interrupt_frame_t* frame, uint64_t error_code) {
     char raw_stack[8];
     memcpy(raw_stack, (void*)&error_code, 8);
@@ -151,4 +155,62 @@ void stack_segment_fault_handler(interrupt_frame_t* frame, uint64_t error_code) 
         }
     }
     __asm__ __volatile__("hlt");
+}
+__attribute__((naked))
+void syscall_idthandler() {
+    asm volatile(
+        // 인터럽트 진입시 트랩 프레임이 이미 스택에 있음 (rip, cs, rflags, [rsp, ss])
+        // 추가적으로 전역/일반 레지스터도 저장
+        "push rax\n\t"
+        "push rbx\n\t"
+        "push rcx\n\t"
+        "push rdx\n\t"
+        "push rsi\n\t"
+        "push rdi\n\t"
+        "push rbp\n\t"
+        "push r8\n\t"
+        "push r9\n\t"
+        "push r10\n\t"
+        "push r11\n\t"
+        "push r12\n\t"
+        "push r13\n\t"
+        "push r14\n\t"
+        "push r15\n\t"
+        "mov rax, ds\n\t"
+        "push rax\n\t"
+        "mov rax, es\n\t"
+        "push rax\n\t"
+        "mov rax, fs\n\t"
+        "push rax\n\t"
+        "mov rax, gs\n\t"
+        "push rax\n\t"
+
+        "mov rdi, rsp\n\t"
+        "call syscall_handler\n\t"
+        "pop rax\n\t"
+        "mov gs, ax\n\t"
+        "pop rax\n\t"
+        "mov fs, ax\n\t"
+        "pop rax\n\t"
+        "mov es, ax\n\t"
+        "pop rax\n\t"
+        "mov ds, ax\n\t"
+        "pop r15\n\t"
+        "pop r14\n\t"
+        "pop r13\n\t"
+        "pop r12\n\t"
+        "pop r11\n\t"
+        "pop r10\n\t"
+        "pop r9\n\t"
+        "pop r8\n\t"
+        "pop rbp\n\t"
+        "pop rdi\n\t"
+        "pop rsi\n\t"
+        "pop rdx\n\t"
+        "pop rcx\n\t"
+        "pop rbx\n\t"
+        "pop rax\n\t"
+
+        "iretq\n\t"
+        );
 }

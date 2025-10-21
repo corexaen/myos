@@ -16,4 +16,5 @@ __attribute__((interrupt))  void none_handler(interrupt_frame_t* frame);
 __attribute__((interrupt))  void page_fault_handler(interrupt_frame_t* frame, uint64_t error_code);
 __attribute__((interrupt))  void general_protection_fault_handler(interrupt_frame_t* frame, uint64_t error_code);
 __attribute__((interrupt))  void stack_segment_fault_handler(interrupt_frame_t* frame, uint64_t error_code);
+__attribute__((naked))      void syscall_idthandler();
 #endif // __HANDLER_H__

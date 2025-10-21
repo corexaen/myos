@@ -156,6 +156,7 @@ wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
     <ClCompile Include="PhysPageAllocator.cpp" />
     <ClCompile Include="process.cpp" />
     <ClCompile Include="rsp.cpp" />
+    <ClCompile Include="syscall.cpp" />
     <ClCompile Include="timer_handler.cpp" />
     <ClCompile Include="trash.cpp_" />
     <ClCompile Include="util.cpp" />
@@ -188,6 +189,7 @@ wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
     <ClInclude Include="process.h" />
     <ClInclude Include="rsp.h" />
     <ClInclude Include="size.h" />
+    <ClInclude Include="syscall.h" />
     <ClInclude Include="timer_handler.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="VirtPageAllocator">

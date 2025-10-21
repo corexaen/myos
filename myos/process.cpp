@@ -102,7 +102,7 @@ void Process::init(uint64_t cs, uint64_t ss) {
     *(--kernel_stack) = 0x202; // rflags
     *(--kernel_stack) = cs;  // cs
     *(--kernel_stack) = (uint64_t)code_va_base; // rip
-
+	mmap_table = nullptr;
     for (int i = 0; i < 15; i++) {
         *(--kernel_stack) = 0;
     }
@@ -118,6 +118,10 @@ void Process::addCode(void* code_addr) {
     pallocator->alloc_virt_page(code_va_base, code, VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::US);
     code_va_base += PageSize;
 }
+void Process::setHeap() {
+    heap_bottom = code_va_base;
+	heap_top = code_va_base;    // 힙은 비어있는 상태로 시작
+}
 void init_process(Process* p) {
     now_process = p;
     now_process->next = now_process;
@@ -127,9 +131,6 @@ void jmp_process() {
     uint64_t now_rsp = (uint64_t)now_process->kernel_stack;
     virt_page_allocator = now_process->pallocator;
     virt_page_allocator->setCr3();
-    uart_print("test2\n");
-    uart_print_hex2(*((char*)0x400000));
-    uart_print("\n");
     __asm__ __volatile(
         "mov rsp, %[now_rsp]\n\t"
         "pop rax\n\t"
@@ -159,4 +160,68 @@ void jmp_process() {
         :
         : [now_rsp]"r"(now_rsp)
     );
+}
+bool Process::isAddrInMMap(uint64_t va) const {
+    mmap_entry* entry = mmap_table;
+    while (entry) {
+        if (entry->va_start <= va && va <= entry->va_end) {
+            return true;
+        }
+        entry = entry->next;
+    }
+    return false;
+}
+volatile uint32_t mmap_lock = 0;
+inline void _lockmmap() {
+    while (__atomic_test_and_set(&mmap_lock, __ATOMIC_ACQUIRE)) {
+		__asm__ __volatile__ ("pause");
+    }
+}
+inline void _unlockmmap() {
+    __atomic_clear(&mmap_lock, __ATOMIC_RELEASE);
+}
+uint64_t Process::mmap(uint64_t size, uint64_t flags) {
+	if (size == 0) return ~0ULL;
+	_lockmmap();
+    uint64_t page_count = (size + PageSize - 1) / PageSize;
+    mmap_entry* entry = mmap_table;
+	mmap_entry* last = nullptr;
+    while (entry != nullptr) {
+        if (last == nullptr) {
+            if (user_stack_top - entry->va_end > page_count * PageSize) {
+                break;
+            }
+        }
+        else {
+            if (last->va_start - entry->va_end > page_count * PageSize) {
+                break;
+            }
+        }
+        last = entry;
+        entry = entry->next;
+    }
+    if (entry == nullptr)
+        if (last != nullptr)
+            if (last->va_start - (page_count * PageSize) < heap_top) {
+                _unlockmmap();
+                return ~0ULL; // 할당 불가
+			}
+    mmap_entry* new_entry = (mmap_entry*)MMAP_ENTRY_BASE;
+    while (new_entry->flags & 0x01) {
+        new_entry++;
+    }
+    new_entry->flags = flags | 0x1;
+    if (last) {
+        last->next = new_entry;
+		new_entry->next = entry;
+        new_entry->va_end = last->va_start - 1;
+		new_entry->va_start = last->va_start - page_count * PageSize;
+    } else {
+        mmap_table = new_entry;
+        mmap_table->next = entry;
+		mmap_table->va_end = user_stack_top - 1;
+		mmap_table->va_start = user_stack_top - page_count * PageSize;
+    }
+	_unlockmmap();
+	return new_entry->va_start;
 }

@@ -21,6 +21,7 @@ typedef struct {
     uint32_t framebufferWidth;
     uint32_t framebufferHeight;
     uint32_t framebufferPitch;
+    uint32_t framebufferFormat;
     uint64_t* physbm;
     uint64_t physbm_size;
     void* rsdp;
