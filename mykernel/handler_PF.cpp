@@ -28,6 +28,13 @@ void page_fault_handler(interrupt_frame_t* frame, uint64_t error_code) {
         uart_print_hex(cr2);
         uart_print("\n");
     }
+    else if (((cr2 >> 39) & 0x1FF) == 258 && !(error_code & (1ull << 2ull))) {
+        virt_page_allocator->alloc_virt_page(cr2 & ~0xFFFULL, phy_page_allocator->alloc_phy_page(), VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::G);
+        memset((void*)(cr2 & ~0xFFFULL), 0, PageSize);
+        uart_print("on-demand page allocation for ");
+        uart_print_hex(cr2);
+        uart_print("\n");
+	}
     else if (now_process->user_stack_top <= cr2 && cr2 < now_process->user_stack_bottom) {
         virt_page_allocator->alloc_virt_page(cr2 & ~0xFFFULL, phy_page_allocator->alloc_phy_page(), VirtPageAllocator::P | VirtPageAllocator::RW | VirtPageAllocator::US);
         memset((void*)(cr2 & ~0xFFFULL), 0, PageSize);

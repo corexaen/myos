@@ -111,6 +111,8 @@ void Process::init(uint64_t cs, uint64_t ss) {
     }
     next = 0;
     state = 1;
+	message_queue_head = nullptr;
+	message_queue_tail = nullptr;
 }
 void Process::addCode(void* code_addr) {
     uint64_t code = phy_page_allocator->alloc_phy_page();
@@ -224,4 +226,35 @@ uint64_t Process::mmap(uint64_t size, uint64_t flags) {
     }
 	_unlockmmap();
 	return new_entry->va_start;
+}
+void Process::msg_recv(const char* msg, uint64_t flags) {
+    process_message_node* new_node = (process_message_node*)MESSAGE_QUEUE_BASE;
+    while (new_node->flags & 0x01) {
+        new_node++;
+    }
+    new_node->flags = flags | 0x1;
+    memcpy(new_node->message, msg, sizeof(new_node->message));
+    new_node->next = nullptr;
+    if (message_queue_tail) {
+        message_queue_tail->next = new_node;
+        message_queue_tail = new_node;
+    } else {
+        message_queue_head = new_node;
+        message_queue_tail = new_node;
+    }
+}
+bool Process::msg_pop(char* out_msg, uint64_t& out_flags) {
+    if (message_queue_head == nullptr) {
+        return false;
+    }
+    process_message_node* node = message_queue_head;
+    message_queue_head = message_queue_head->next;
+    if (message_queue_head == nullptr) {
+        message_queue_tail = nullptr;
+    }
+    out_flags = node->flags & ~0x1;
+    memcpy(out_msg, node->message, sizeof(node->message));
+    node->flags = 0; // ÇØÁ¦
+	pallocator->phy_allocator->free_phy_page(pallocator->free_virt_page((uint64_t)node & ~0xFFFULL));
+    return true;
 }

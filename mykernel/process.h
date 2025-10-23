@@ -5,6 +5,7 @@
 #include "allocator"
 
 #define MMAP_ENTRY_BASE 0xFFFF808000000000ULL
+#define MESSAGE_QUEUE_BASE 0xFFFF810000000000ULL
 
 struct TSS64 {
     uint32_t reserved0;
@@ -48,7 +49,15 @@ struct mmap_entry {
     uint64_t flags;
     mmap_entry* next;
 };
+struct process_message_node {
+    process_message_node* next;
+    uint64_t flags;
+    char message[PageSize - sizeof(next) * 2];
+} __attribute__((packed));
 class Process {
+private:
+    process_message_node* message_queue_head;
+	process_message_node* message_queue_tail;
 public:
     uint64_t cr3;
     uint64_t kernel_stack_phys;
@@ -69,6 +78,8 @@ public:
     void setHeap();
 	bool isAddrInMMap(uint64_t va) const;
 	uint64_t mmap(uint64_t size, uint64_t flags);
+	void msg_recv(const char* msg, uint64_t flags);
+	bool msg_pop(char* out_msg, uint64_t& out_flags);
 };
 extern Process* now_process;
 void init_process(Process* p);

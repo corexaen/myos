@@ -18,9 +18,10 @@
 //pml4
 //256 partition data heap
 //257 mmap table heap
+//258 process message queue
 //509 mmio
 //510 HHDM
-//511 kernel + bootdata
+//511 kernel + bootdata + init stack
 
 
 // 최종 APIC 초기화

@@ -29,7 +29,40 @@ __attribute__((noinline)) void syscall_handler(context_t* frame) {
 		}
 		break;
 	}
-	case 5: // Griphics
+	case 2: // read
+	{
+		// 아직 구현 안됨
+		frame->rax = -1; // 반환값: 오류
+		break;
+	}
+	case 3: // getpid
+	{
+		// 현재 프로세스 ID를 반환 (아직 구현 안됨)
+		frame->rax = -1;
+		break;
+	}
+	case 4: // message
+	{
+		if (frame->rdi == 0) { // send
+			// 아직 구현 안됨
+			frame->rax = -1; // 반환값: 오류
+		}
+		else if(frame->rdi == 1) { // pop
+			char* out_msg = (char*)frame->rsi;
+			uint64_t out_flags = 0;
+			if (now_process->msg_pop(out_msg, out_flags)) {
+				frame->rdx = out_flags;
+				frame->rax = 0; // 반환값: 성공
+			}
+			else {
+				frame->rax = -1; // 반환값: 오류
+			}
+		}
+		else {
+			frame->rax = -1; // 반환값: 오류
+		}
+	}
+	case 5: // Graphics
 	{
 		if(frame->rdi == 0) { // Get Framebuffer Info
 			Ginfo* ginfo = (Ginfo*)frame->rsi;
