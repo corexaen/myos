@@ -22,7 +22,7 @@
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{dcde1285-3efe-4efe-83a3-f70d3bbb8a1d}</ProjectGuid>
-    <RootNamespace>myos</RootNamespace>
+    <RootNamespace>mykernel</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -71,9 +71,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>wsl make -C /mnt/c/Users/nanno/desktop/mykernel/mykernel</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>wsl make clean
-wsl make -C /mnt/c/Users/nanno/desktop/myos/myos</NMakeReBuildCommandLine>
+wsl make -C /mnt/c/Users/nanno/desktop/mykernel/mykernel</NMakeReBuildCommandLine>
     <AdditionalOptions>CppProperties.json.json</AdditionalOptions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
