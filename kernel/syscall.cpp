@@ -10,7 +10,11 @@
 #include "arch/lapic.h"
 #include "arch/handler.h"
 #include "filesys/file.h"
+#include "net/socket.h"
+#include "net/icmp.h"
+#include "net/udp.h"
 extern uint64_t get_cycles();
+extern vector<NetDevice*>* netdevices;
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define GOP_PIXEL_FORMAT_RGBR     0   // PixelRedGreenBlueReserved8BitPerColor
 #define GOP_PIXEL_FORMAT_BGRR     1   // PixelBlueGreenRedReserved8BitPerColor
@@ -434,6 +438,106 @@ __attribute__((noinline)) void syscall_handler(context_t* frame) {
 		}
 		tsc_deadline_set(nexttime);
 		now_process->run_process();
+	}
+	case 36: // socket
+	{
+		if (frame->rdi == 0) { // create socket
+			Socket* socket = nullptr;
+			if (frame->rsi == 1) {
+				socket = ICMPSocket::Create();
+			}
+			else if (frame->rsi == 3) {
+				socket = UDPSocket::Create(frame->rdx);
+			}
+			frame->rax = socket != nullptr ? socket->id : (uint64_t)-1;
+		}
+		else if (frame->rdi == 1) { // send  (type=r8, seq=r9, data=r10, ttl=r12, len=r13)
+			Socket* socket = (Socket*)Socket::get((uint16_t)frame->rsi);
+			if (socket) {
+				string data((uint8_t*)frame->r10, (uint16_t)frame->r13);
+				socket->send(data);
+				frame->rax = 0; // 반환값: 성공
+			}
+			else {
+				frame->rax = -1; // 반환값: 오류 (존재하지 않는 소켓)
+			}
+		}
+		else if (frame->rdi == 2) { // recv  (type*=rdx, seq*=r8, data=r9, len*=r10)
+			Socket* socket = (Socket*)Socket::get((uint16_t)frame->rsi);
+			if (socket) {
+				uint8_t*  utype = (uint8_t*)frame->rdx;
+				uint16_t* useq  = (uint16_t*)frame->r8;
+				uint8_t*  udata = (uint8_t*)frame->r9;
+				uint16_t* ulen  = (uint16_t*)frame->r10;
+				size_t len = *ulen;
+				RxMsg data;
+				uint64_t result = socket->recv(data, len);
+				if (result == -1) {
+					frame->rax = -1;
+					break;
+				}
+				data.data.copy_out(0, udata, data.data.size() > *ulen ? *ulen : data.data.size());
+				*ulen = data.data.size();
+				frame->rax = result; // 반환값: 데이터 길이
+			}
+			else {
+				frame->rax = -1; // 반환값: 오류 (존재하지 않는 소켓)
+			}
+		}
+		else if (frame->rdi == 3) { // connect
+			Socket* socket = (Socket*)Socket::get((uint16_t)frame->rsi);
+			if (socket) { socket->connect(frame->rdx, frame->rbx); frame->rax = 0; }   // rdx = dst_ip, rbx = dst_port
+			else frame->rax = -1;
+		}
+		else if (frame->rdi == 4) { // set device
+			Socket* socket = (Socket*)Socket::get((uint16_t)frame->rsi);
+			if (socket) { socket->set_device(frame->rdx); frame->rax = 0; }   // rdx = device_id
+			else frame->rax = -1;
+		}
+		else if (frame->rdi == 5) { // set flags
+			Socket* socket = (Socket*)Socket::get((uint16_t)frame->rsi);
+			if (!socket) { frame->rax = -1; break; }
+			uint64_t blocking = !!(frame->rdx & SOCKET_FLAG_BLOCKING);
+			uint64_t message = !!(frame->rdx & SOCKET_FLAG_MESSAGE);
+			socket->state = (blocking << 1) | (message << 2) | 1;
+			if (message)
+				socket->msg_pid = now_process->id;
+			else
+				socket->msg_pid = (uint64_t)-1;
+			frame->rax = 0;
+		}
+		else {
+			frame->rax = -1; // 반환값: 오류 (알 수 없는 소켓 명령)
+		}
+		break;
+	}
+	case 37: // netdevice
+	{
+		if (frame->rdi == 0) { //get count
+			frame->rax = netdevices[0].size();
+		}
+		if (frame->rdi == 1) { //get
+			frame->rax = netdevices[0][frame->rsi]->src_ip();
+		}
+		if (frame->rdi == 2) { //set
+			netdevices[0][frame->rsi]->set_ip(frame->rdx);
+		}
+		if (frame->rdi == 3) {
+			char* mac_buf = (char*)frame->rdx;
+			netdevices[0][frame->rsi]->get_mac(mac_buf);
+			frame->rax = 0;
+		}
+		break;
+	}
+	case 38: // route table
+	{
+		if (frame->rdi == 0) {
+			RouteTable::add(frame->r8, frame->r9, frame->r10, netdevices[0][frame->rsi]);
+		}
+		if (frame->rdi == 1) {
+			RouteTable::del(netdevices[0][frame->rsi]);
+		}
+		break;
 	}
 	case 45: // brk
 	{
