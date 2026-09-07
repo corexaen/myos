@@ -9,6 +9,7 @@
 #include "filesys/file.h"
 #include "util/new.h"
 #include "arch/idt.h"
+#include "util/buffer.h"
 #define MMAP_ENTRY_BASE 0xFFFF808000000000ULL
 #define PROCESS_QUEUE_BASE 0xFFFF818000000000ULL
 
@@ -172,6 +173,7 @@ typedef struct {
 } __attribute__((packed)) msg_t;
 #define MAX_MESSAGE_QUEUE_SIZE 128
 #define MAX_MESSAGE_QUEUE_INT 256
+class SSEBuffer : public BufferPool<SSEBuffer, 512> {};
 void pinit(void* obj);
 void pdestroy(void* obj);
 class Process : public NewObject<PROCESS_QUEUE_BASE, 512, pinit, pdestroy> {
@@ -199,6 +201,7 @@ public:
 	uint64_t cwd_cluster;
     pointer_vector open_files;
     uint64_t console_pid;
+    SSEBuffer* sse_buffer;
     Process(uint64_t cs, uint64_t ss, Partition* partition, uint64_t cwd_cluster, bool full_init = true);
     ~Process();
     void addCode(void* code_addr);
