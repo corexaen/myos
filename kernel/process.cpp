@@ -114,6 +114,7 @@ vector<KEvent>* xhci_event;
 alignas(vector<KEvent>) uint8_t xhci_event_buf[sizeof(vector<KEvent>)];
 
 Process* now_process = 0;
+alignas(64) uint8_t sse_template[512];
 
 void pinit(void* obj) {
 	Process* process = (Process*)obj;
@@ -127,6 +128,8 @@ void pinit(void* obj) {
     memset((void*)(process->cr3), 0, PageSize / 2);                              // 하위 절반 초기화
     memcpy((void*)(process->cr3 + 256ull * 8), (void*)(lcr3 + 256ull * 8), 256ull * 8); // 커널 공간 복사
     process->pallocator->init(phy_page_allocator, process->cr3);
+    process->sse_buffer = new SSEBuffer();
+	memcpy(process->sse_buffer->addr(), sse_template, 512);
 }
 Process::Process(uint64_t cs, uint64_t ss, Partition* partition,
     uint64_t cwd_cluster, bool full_init) {
@@ -149,7 +152,6 @@ Process::Process(uint64_t cs, uint64_t ss, Partition* partition,
     this->cwd_cluster = cwd_cluster;
     state = 1;
     parent = -1ull;
-
     if (full_init) {
         open_files.push_back(new STDIn());
         open_files.push_back(new STDOut());
@@ -181,6 +183,7 @@ Process::~Process() {
         }
     }
 
+    memcpy(sse_buffer->addr(), sse_template, 512);
     state |= PROCESS_STATE_ZOMBIE;
 	Process* parent_process = GetProcess(parent);
     if(parent_process->state & PROCESS_STATE_CHILD_WAIT) {
@@ -195,6 +198,7 @@ void pdestroy(void* obj) {
     Process* process = (Process*)obj;
     phy_page_allocator->put_page(process->cr3 - HHDM_BASE);
     phy_page_allocator->put_page(process->kernel_stack_phys - PageSize);
+    delete process->sse_buffer;
 }
 void Process::addCode(void* code_addr) {
     uint64_t code = phy_page_allocator->alloc_phy_page();
@@ -243,6 +247,15 @@ void init_process() {
         *(--idle_process->kernel_stack) = 0x10;
     }
     sig_page_phys = phy_page_allocator->alloc_phy_page();
+    uint32_t mxcsr = 0x1F80;
+    __asm__ __volatile__(
+        "fninit\n\t"
+        "ldmxcsr %[mx]\n\t"
+        "fxsave %[buf]\n\t"
+        : [buf] "=m"(sse_template)
+        : [mx] "m"(mxcsr)
+        :
+    );
 }
 void init_trampoline(File* trampoline) {
     if (trampoline)
