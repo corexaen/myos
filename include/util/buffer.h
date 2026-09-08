@@ -2,13 +2,11 @@
 #define __BUFFER_H__
 #include <util/size.h>
 #include <mm/allocator>
-template <typename>
+template <typename, uint64_t based_addr, uint64_t size>
 class BufferPool {
 private:
 	volatile inline static uint64_t count = 0;
 	volatile inline static uint64_t biggest = 0;
-	inline static uint64_t based_addr = 0;
-	inline static uint64_t size = 0;
 protected:
 	BufferPool() {}
 	virtual ~BufferPool() {}

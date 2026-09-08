@@ -408,6 +408,7 @@ extern "C" void waiting_handler(context_t* frame) {
 		return; // 알 수 없는 인터럽트, 그냥 복귀
     }
     now_process->state |= PROCESS_STATE_WAITING; // 대기 상태
+    now_process->save_sse();
     now_process = next_process();
     uint64_t nowtime = tsc_get();
     next_process_time = nowtime + ms_to_ticks(now_process->time_slice);

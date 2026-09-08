@@ -10,6 +10,7 @@
 #include "util/new.h"
 #include "arch/idt.h"
 #include "util/buffer.h"
+#include "kernel/kernel.h"
 #define MMAP_ENTRY_BASE 0xFFFF808000000000ULL
 #define PROCESS_QUEUE_BASE 0xFFFF818000000000ULL
 
@@ -173,7 +174,7 @@ typedef struct {
 } __attribute__((packed)) msg_t;
 #define MAX_MESSAGE_QUEUE_SIZE 128
 #define MAX_MESSAGE_QUEUE_INT 256
-class SSEBuffer : public BufferPool<SSEBuffer, 512> {};
+class SSEBuffer : public BufferPool<SSEBuffer, pml4_addr(PML4::PROCESS_SSE_HEAP), 512> {};
 void pinit(void* obj);
 void pdestroy(void* obj);
 class Process : public NewObject<PROCESS_QUEUE_BASE, 512, pinit, pdestroy> {
@@ -220,6 +221,7 @@ public:
     uint64_t wait();
 	uint64_t waitpid(uint64_t pid);
     uint64_t signal(context_t* ctx);
+    void save_sse();
 };
 extern queue<size_t>* process_queue;   //todo - queue를 코어 개수에 맞게 생성할 수 있도록 확장 필요
 extern HeapTree<KEvent>* time_event;

@@ -428,6 +428,7 @@ __attribute__((noinline)) void syscall_handler(context_t* frame) {
 	}
 	case 34: // yield
 	{
+		now_process->save_sse();
 		process_queue->enqueue(now_process->id);
 		now_process = next_process();
 		uint64_t nowtime = tsc_get();

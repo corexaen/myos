@@ -193,7 +193,13 @@ Process::~Process() {
 		add_process(parent_process->id);
     }
 }
-
+void Process::save_sse() {
+	__asm__ __volatile__(
+        "fxsave [%[buf]]"
+        :
+		: [buf] "r"(sse_buffer->addr())
+        : "memory");
+}
 void pdestroy(void* obj) {
     Process* process = (Process*)obj;
     phy_page_allocator->put_page(process->cr3 - HHDM_BASE);
@@ -256,6 +262,8 @@ void init_process() {
         : [mx] "m"(mxcsr)
         :
     );
+    idle_process->sse_buffer = new SSEBuffer();
+    memcpy(idle_process->sse_buffer->addr(), sse_template, 512);
 }
 void init_trampoline(File* trampoline) {
     if (trampoline)
@@ -302,6 +310,10 @@ __attribute__((noreturn))
 void Process::run_process() {
     tss.rsp0 = this->kernel_stack_phys + HHDM_BASE;
     uint64_t now_rsp = (uint64_t)this->kernel_stack;
+    __asm__ __volatile__(
+		"fxrstor [%[buf]]\n\t"
+		::[buf] "r"(sse_buffer->addr()) : "memory"
+    );
     virt_page_allocator = this->pallocator;
     virt_page_allocator->setCr3();
     __asm__ __volatile__ (
